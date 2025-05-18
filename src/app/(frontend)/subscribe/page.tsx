@@ -4,8 +4,15 @@ import React, { useEffect, useState } from 'react'
 import { useUserContext } from '@/context/UserContext'
 import { useRevenueCat } from '@/providers/RevenueCat'
 import { useSubscription } from '@/hooks/useSubscription'
-import { Purchases, Package, PurchasesError, ErrorCode } from '@revenuecat/purchases-js'
+import { Purchases, Package, PurchasesError, ErrorCode, type Product } from '@revenuecat/purchases-js'
 import { useRouter } from 'next/navigation'
+
+// Extend Product type to include price
+interface RevenueCatProduct extends Product {
+  price?: number;
+  priceString?: string;
+  currencyCode?: string;
+}
 
 export default function SubscribePage() {
   const router = useRouter()
@@ -131,7 +138,7 @@ export default function SubscribePage() {
 
       <div className="mx-auto max-w-4xl grid grid-cols-1 gap-8 md:grid-cols-2 items-start">
         {monthly_subscription_plan && (() => {
-          const product = monthly_subscription_plan.webBillingProduct
+          const product = monthly_subscription_plan.webBillingProduct as RevenueCatProduct
           return (
             <div key={monthly_subscription_plan.identifier} className="rounded-2xl border border-border p-8 shadow-sm">
               <h2 className="text-lg font-semibold leading-8 text-foreground">{product.displayName}</h2>
@@ -156,7 +163,7 @@ export default function SubscribePage() {
         })()}
 
         {annual_subscription_plan && (() => {
-          const product = annual_subscription_plan.webBillingProduct
+          const product = annual_subscription_plan.webBillingProduct as RevenueCatProduct
           return (
             <div key={annual_subscription_plan.identifier} className="relative rounded-2xl border border-primary p-8 shadow-lg">
               <div className="absolute top-0 -translate-y-1/2 transform rounded-full bg-primary px-3 py-1 text-xs font-semibold tracking-wide text-primary-foreground">
@@ -186,7 +193,7 @@ export default function SubscribePage() {
       </div>
 
       {professional_plan && (() => {
-        const product = professional_plan.webBillingProduct;
+        const product = professional_plan.webBillingProduct as RevenueCatProduct;
         return (
           <div 
             className="mt-16 pt-16 pb-16 md:border-t border-border bg-cover bg-center relative rounded-lg shadow-md"

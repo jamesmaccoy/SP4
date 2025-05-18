@@ -1,40 +1,29 @@
 'use client'
 
-import React, { Suspense } from 'react'
+import React, { Suspense } from 'react' // Import Suspense
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useUserContext } from '@/context/UserContext'
 import { useSubscription } from '@/hooks/useSubscription'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button' // Assuming you have a Button component
 import JoinClient from './page.client'
 
 export default function JoinPage() {
   const router = useRouter()
-  const { currentUser, isLoading: isUserLoading } = useUserContext()
-  const { isSubscribed, isLoading: isSubscriptionLoading, error } = useSubscription()
+  const { currentUser } = useUserContext()
+  const { isSubscribed, isLoading, error } = useSubscription()
 
-  // Only redirect if we're certain about both user and subscription status
+  // Only redirect if we're certain about the subscription status
   React.useEffect(() => {
-    // Don't do anything while either context is loading
-    if (isUserLoading || isSubscriptionLoading) {
-      return
+    if (!isLoading && !error) {
+      if (!currentUser) {
+        router.push('/login')
+      } else if (!isSubscribed) {
+        router.push('/subscribe')
+      }
     }
+  }, [currentUser, isSubscribed, isLoading, error, router])
 
-    // Now we can be certain about the states
-    if (!currentUser) {
-      console.log('No user found, redirecting to login')
-      router.push('/login')
-      return
-    }
-
-    if (!error && !isSubscribed) {
-      console.log('User not subscribed, redirecting to subscribe')
-      router.push('/subscribe')
-      return
-    }
-  }, [currentUser, isSubscribed, isUserLoading, isSubscriptionLoading, error, router])
-
-  // Show loading state while either context is loading
-  if (isUserLoading || isSubscriptionLoading) {
+  if (isLoading) {
     return (
       <div className="container py-12">
         <h1 className="text-3xl font-bold mb-6">Join</h1>
@@ -52,24 +41,25 @@ export default function JoinPage() {
     )
   }
 
-  // Don't show content unless we have a user and they're subscribed
+  // Don't return null here - wait for the useEffect to handle redirects
   if (!currentUser || !isSubscribed) {
     return (
       <div className="container py-12">
         <h1 className="text-3xl font-bold mb-6">Join</h1>
-        <p>Verifying access...</p>
+        <p>Loading...</p>
       </div>
     )
   }
 
   return (
     <>
+      {/* Wrap the part using useSearchParams in Suspense */}
       <Suspense fallback={<JoinClient />}>
         <JoinInner />
       </Suspense>
     </>
   )
-}
+} 
 
 // New component to contain logic using useSearchParams
 function JoinInner() {
