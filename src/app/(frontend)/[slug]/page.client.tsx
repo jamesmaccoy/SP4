@@ -180,7 +180,7 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
               }
 
               // Navigate to join page with parameters
-              router.push(`/join?total=${rate}&duration=${duration}&postId=${page?.id || ''}`)
+              router.push(`/estimate?total=${rate}&duration=${duration}&postId=${page?.id || ''}`)
             }}
           >
             Request Availability

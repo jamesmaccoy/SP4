@@ -3,7 +3,7 @@ import { jwtDecode } from 'jwt-decode'
 import type { User } from './payload-types' // Ensure User type includes 'role' (as an array of strings)
 
 // Paths that require authentication and subscription
-const PROTECTED_PATHS = ['/admin', '/join']
+const PROTECTED_PATHS = ['/admin', '/estimate']
 
 // Paths that are always allowed
 const PUBLIC_PATHS = ['/login', '/subscribe', '/register']
@@ -98,7 +98,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // For other protected paths like /join, a general subscription check might be enough
+  // For other protected paths like /estimate, a general subscription check might be enough
   if (PROTECTED_PATHS.some((path) => pathname.startsWith(path) && !pathname.startsWith('/admin'))) {
     try {
       const checkUrl = new URL('/api/check-subscription', request.url)

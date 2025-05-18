@@ -1,4 +1,3 @@
-// app/(frontend)/join/page.client.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -16,14 +15,14 @@ interface RevenueCatError extends Error {
   code?: ErrorCode;
 }
 
-// Extend Product type to include price
-interface RevenueCatProduct extends Product {
-  price?: number;
-  priceString?: string;
-  currencyCode?: string;
+// Extend Product type to include price and other properties
+interface RevenueCatProduct extends Omit<Product, 'price' | 'priceString'> {
+  price: number;
+  priceString: string;
+  currencyCode: string;
 }
 
-export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/A' }) {
+export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration = 'N/A' }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isInitialized } = useRevenueCat()
@@ -285,8 +284,8 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
         console.log("Per Night packages:", perNightOffering.availablePackages.map(pkg => ({
           identifier: pkg.webBillingProduct?.identifier,
           product: pkg.webBillingProduct,
-          priceString: pkg.webBillingProduct?.priceString,
-          price: pkg.webBillingProduct?.price
+          priceString: (pkg.webBillingProduct as RevenueCatProduct)?.priceString,
+          price: (pkg.webBillingProduct as RevenueCatProduct)?.price
         })))
         setOfferings(perNightOffering.availablePackages)
       } else {
@@ -316,8 +315,8 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
       packageId: selectedPackage,
       revenueCatId: selectedPackageDetails.revenueCatId,
       foundPackage: packageToUse?.webBillingProduct?.identifier,
-      priceString: packageToUse?.webBillingProduct?.priceString,
-      price: packageToUse?.webBillingProduct?.price,
+      priceString: (packageToUse?.webBillingProduct as RevenueCatProduct)?.priceString,
+      price: (packageToUse?.webBillingProduct as RevenueCatProduct)?.price,
       bookingTotal
     })
 
@@ -702,4 +701,4 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
       </div>
     </div>
   )
-}
+} 

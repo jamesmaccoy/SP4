@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useUserContext } from '@/context/UserContext'
 import { useSubscription } from '@/hooks/useSubscription'
 import { Button } from '@/components/ui/button' // Assuming you have a Button component
-import JoinClient from './page.client'
+import EstimateClient from './page.client'
 
-export default function JoinPage() {
+export default function EstimatePage() {
   const router = useRouter()
   const { currentUser } = useUserContext()
   const { isSubscribed, isLoading, error } = useSubscription()
@@ -26,7 +26,7 @@ export default function JoinPage() {
   if (isLoading) {
     return (
       <div className="container py-12">
-        <h1 className="text-3xl font-bold mb-6">Join</h1>
+        <h1 className="text-3xl font-bold mb-6">Estimate</h1>
         <p>Loading...</p>
       </div>
     )
@@ -35,7 +35,7 @@ export default function JoinPage() {
   if (error) {
     return (
       <div className="container py-12">
-        <h1 className="text-3xl font-bold mb-6">Join</h1>
+        <h1 className="text-3xl font-bold mb-6">Estimate</h1>
         <p className="text-error">Error: {error.message}</p>
       </div>
     )
@@ -45,7 +45,7 @@ export default function JoinPage() {
   if (!currentUser || !isSubscribed) {
     return (
       <div className="container py-12">
-        <h1 className="text-3xl font-bold mb-6">Join</h1>
+        <h1 className="text-3xl font-bold mb-6">Estimate</h1>
         <p>Loading...</p>
       </div>
     )
@@ -54,15 +54,15 @@ export default function JoinPage() {
   return (
     <>
       {/* Wrap the part using useSearchParams in Suspense */}
-      <Suspense fallback={<JoinClient />}>
-        <JoinInner />
+      <Suspense fallback={<EstimateClient />}>
+        <EstimateInner />
       </Suspense>
     </>
   )
 } 
 
 // New component to contain logic using useSearchParams
-function JoinInner() {
+function EstimateInner() {
   const searchParams = useSearchParams()
   const bookingTotal = searchParams.get('total') ?? 'N/A'
   const bookingDuration = searchParams.get('duration') ?? 'N/A'
@@ -77,16 +77,16 @@ function JoinInner() {
         </div>
       </div>
       {/* The actual premium content */}
-      <JoinClient bookingTotal={bookingTotal} bookingDuration={bookingDuration} />
+      <EstimateClient bookingTotal={bookingTotal} bookingDuration={bookingDuration} />
     </>
   )
 }
 
 // Simple loading component for the Suspense fallback
-function JoinLoading() {
+function EstimateLoading() {
   return (
     <div className="container py-12 text-center">
       <p>Loading booking details...</p>
     </div>
   )
-}
+} 

@@ -182,7 +182,7 @@ export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate 
         disabled={!startDate || !endDate}
         onClick={() => {
           // Navigate to join page with parameters
-          window.location.href = `/join?total=${baseRate}&duration=${selectedDuration}`
+          window.location.href = `/estimate?total=${baseRate}&duration=${selectedDuration}`
         }}
       >
         {!startDate || !endDate ? 'Select dates to book' : 'Request Availability'}
