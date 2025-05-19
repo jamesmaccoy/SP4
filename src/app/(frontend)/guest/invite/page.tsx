@@ -19,33 +19,75 @@ import InviteClientPage from './page.client'
 import { AlertCircleIcon, ArrowLeftIcon } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { Metadata } from 'next'
+import { getServerSideURL } from '@/utilities/getURL'
 
 type SearchParams = Promise<{
   token: string
 }>
 
-export const metadata: Metadata = {
-  title: 'Guest Invite',
-  description: 'Accept your guest invite',
-  openGraph: {
+export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
+  const { token } = await searchParams
+  
+  if (!token) {
+    return {
+      title: 'Guest Invite',
+      description: 'Accept your guest invite',
+    }
+  }
+
+  const tokenData = await fetchTokenData(token)
+  if (!tokenData) {
+    return {
+      title: 'Guest Invite',
+      description: 'Accept your guest invite',
+    }
+  }
+
+  const booking = await fetchBookingDetails(tokenData.bookingId, token)
+  if (!booking || !booking.post) {
+    return {
+      title: 'Guest Invite',
+      description: 'Accept your guest invite',
+    }
+  }
+
+  const post = typeof booking.post === 'string' ? null : booking.post
+  const serverUrl = getServerSideURL()
+  
+  let postImage: string | null = null
+  if (post) {
+    if (post.meta?.image && typeof post.meta.image === 'object' && 'url' in post.meta.image) {
+      const ogUrl = post.meta.image.sizes?.og?.url
+      postImage = ogUrl ? serverUrl + ogUrl : serverUrl + post.meta.image.url
+    } else if (post.heroImage && typeof post.heroImage === 'object' && 'url' in post.heroImage) {
+      const ogUrl = post.heroImage.sizes?.og?.url
+      postImage = ogUrl ? serverUrl + ogUrl : serverUrl + post.heroImage.url
+    }
+  }
+
+  return {
     title: 'Guest Invite',
     description: 'Accept your guest invite',
-    type: 'website',
-    images: [
-      {
-        url: '/images/og-guest-invite.jpg', // You'll need to add this image to your public folder
-        width: 1200,
-        height: 630,
-        alt: 'Guest Invite Preview',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Guest Invite',
-    description: 'Accept your guest invite',
-    images: ['/images/og-guest-invite.jpg'],
-  },
+    openGraph: {
+      title: 'Guest Invite',
+      description: 'Accept your guest invite',
+      type: 'website',
+      images: postImage ? [
+        {
+          url: postImage,
+          width: 1200,
+          height: 630,
+          alt: 'Guest Invite Preview',
+        },
+      ] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Guest Invite',
+      description: 'Accept your guest invite',
+      images: postImage ? [postImage] : undefined,
+    },
+  }
 }
 
 export default async function GuestInvite({ searchParams }: { searchParams: SearchParams }) {
