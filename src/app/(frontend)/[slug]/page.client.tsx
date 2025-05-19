@@ -179,8 +179,20 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
                 }
               }
 
-              // Navigate to join page with parameters
-              router.push(`/estimate?total=${rate}&duration=${duration}&postId=${page?.id || ''}`)
+              console.log('Post page - Page data:', {
+                id: page?.id,
+                title: page?.title,
+                slug: page?.slug
+              })
+
+              // Use the post's ID from the URL slug
+              const postId = window.location.pathname.split('/').pop()
+              console.log('Using post ID from URL:', postId)
+
+              const estimateUrl = `/estimate?total=${rate}&duration=${duration}&postId=${postId || ''}`
+              console.log('Navigating to estimate page:', estimateUrl)
+              
+              router.push(estimateUrl)
             }}
           >
             Request Availability

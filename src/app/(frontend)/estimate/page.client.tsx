@@ -40,6 +40,8 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
   
   // Get postId from URL if available
   const postId = searchParams?.get('postId') || ''
+  
+  console.log('Estimate page - Received postId:', postId)
 
   // Calculate total price
   const totalPrice = 
@@ -464,11 +466,9 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
           postId: postId,
           fromDate: fromDate.toISOString(),
           toDate: toDate.toISOString(),
-          duration: selectedDuration,
-          packageType: selectedPackage,
-          revenueCatPackageId: selectedPackageDetails.revenueCatId,
-          totalAmount: calculateTotalPrice(),
         }
+        
+        console.log('Sending booking data:', bookingData)
         
         const response = await fetch('/api/bookings', {
           method: 'POST',

@@ -58,16 +58,6 @@ const fetchBookingDetails = async (bookingId: string, currentUserId: string) => 
     depth: 2,
     pagination: false,
     limit: 1,
-    select: {
-      id: true,
-      title: true,
-      customer: true,
-      guests: true,
-      post: true,
-      fromDate: true,
-      toDate: true,
-      createdAt: true,
-    },
   })
 
   if (booking.docs.length === 0) {
