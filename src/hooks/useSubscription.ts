@@ -58,21 +58,28 @@ export const useSubscription = (entitlementId?: string): SubscriptionStatus => {
         console.log('useSubscription - API Response Status:', response.status);
         console.log('useSubscription - API Response OK:', response.ok);
         
-        if (!response.ok) {
-            try {
-                const errorText = await response.text();
-                console.error('useSubscription - API Error Response Text:', errorText);
-            } catch (e) {
-                console.error('useSubscription - Could not get error text from response', e);
-            }
-            throw new Error('Failed to check subscription status');
+        const responseData = await response.json();
+        
+        if (response.status === 401) {
+          // User is not authenticated
+          setSubscriptionStatus({
+            isSubscribed: false,
+            entitlements: [],
+            expirationDate: null,
+            isLoading: false,
+            error: new Error('User not authenticated'),
+          });
+          return;
         }
 
-        const { hasActiveSubscription, activeEntitlements, customerId } = await response.json()
+        if (responseData.error) {
+          console.error('useSubscription - API Error:', responseData.error);
+          throw new Error(responseData.error);
+        }
 
         setSubscriptionStatus({
-          isSubscribed: hasActiveSubscription,
-          entitlements: activeEntitlements || [],
+          isSubscribed: responseData.hasActiveSubscription,
+          entitlements: responseData.activeEntitlements || [],
           expirationDate: null,
           isLoading: false,
           error: null,

@@ -46,6 +46,10 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error) {
     console.error('Error checking subscription:', error)
-    return NextResponse.json({ hasActiveSubscription: false }, { status: 500 })
+    // Return 200 with hasActiveSubscription: false instead of 500
+    return NextResponse.json({ 
+      hasActiveSubscription: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
   }
 } 

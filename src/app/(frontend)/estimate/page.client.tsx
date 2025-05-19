@@ -15,11 +15,11 @@ interface RevenueCatError extends Error {
   code?: ErrorCode;
 }
 
-// Extend Product type to include price and other properties
-interface RevenueCatProduct extends Omit<Product, 'price' | 'priceString'> {
-  price: number;
-  priceString: string;
-  currencyCode: string;
+// Add type for RevenueCat product with additional properties
+interface RevenueCatProduct extends Product {
+  price?: number;
+  priceString?: string;
+  currencyCode?: string;
 }
 
 export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration = 'N/A' }) {
@@ -406,11 +406,30 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
         throw new Error("No package selected")
       }
 
+      // Add detailed logging
+      console.log("RevenueCat Debug - Available Offerings:", offerings.map(pkg => ({
+        identifier: pkg.webBillingProduct?.identifier,
+        price: (pkg.webBillingProduct as RevenueCatProduct)?.price,
+        priceString: (pkg.webBillingProduct as RevenueCatProduct)?.priceString,
+        title: pkg.webBillingProduct?.title,
+        description: pkg.webBillingProduct?.description
+      })));
+
+      console.log("RevenueCat Debug - Selected Package Details:", {
+        packageId: selectedPackage,
+        revenueCatId: selectedPackageDetails.revenueCatId,
+        details: selectedPackageDetails
+      });
+
       const bookingPackage = offerings.find(pkg => {
-        const identifier = pkg.webBillingProduct?.identifier
-        console.log("Checking package:", identifier, "against", selectedPackageDetails.revenueCatId)
-        return identifier === selectedPackageDetails.revenueCatId
-      })
+        const identifier = pkg.webBillingProduct?.identifier;
+        console.log("RevenueCat Debug - Comparing package:", {
+          checking: identifier,
+          against: selectedPackageDetails.revenueCatId,
+          fullPackage: pkg
+        });
+        return identifier === selectedPackageDetails.revenueCatId;
+      });
       
       if (!bookingPackage) {
         console.error("Available packages:", offerings.map(pkg => ({
