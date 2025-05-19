@@ -9,6 +9,9 @@ import { Purchases, type Package, type PurchasesError, ErrorCode, type Product }
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from 'lucide-react'
 import { Switch } from "@/components/ui/switch"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Check } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 // Add type for RevenueCat error with code
 interface RevenueCatError extends Error {
@@ -589,50 +592,67 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
         <h2 className="text-2xl font-semibold mb-4">Your Selected Package</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Main Package */}
-          <div className="p-6 rounded-lg border-2 border-primary bg-primary/5">
-            <h3 className="text-xl font-semibold mb-2">
-              {selectedPackage ? packageDetails[selectedPackage]?.title : "Loading..."}
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              {selectedPackage ? packageDetails[selectedPackage]?.description : ""}
-            </p>
-            <ul className="mb-4 space-y-2">
-              {selectedPackage && packageDetails[selectedPackage]?.features.map((feature, index) => (
-                <li key={index} className="flex items-center text-sm">
-                  <span className="mr-2">•</span>
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            <div className="flex justify-between items-center">
+          <Card className="border-2 border-primary bg-primary/5">
+            <CardHeader>
+              <CardTitle>
+                {selectedPackage ? packageDetails[selectedPackage]?.title : "Loading..."}
+              </CardTitle>
+              <CardDescription>
+                {selectedPackage ? packageDetails[selectedPackage]?.description : ""}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                {selectedPackage && packageDetails[selectedPackage]?.features.map((feature, index) => (
+                  <li key={index} className="flex items-center text-sm">
+                    <Check className="mr-2 h-4 w-4 text-primary" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+            <CardFooter>
               <span className="text-2xl font-bold">
                 {formatPrice(packagePrice)}/night
               </span>
-            </div>
-          </div>
+            </CardFooter>
+          </Card>
 
           {/* Wine Package Add-on */}
-          <div className="p-6 rounded-lg border-2 border-border hover:border-primary/50 transition-all">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-xl font-semibold mb-2">{packageDetails.wine.title}</h3>
-                <p className="text-muted-foreground">{packageDetails.wine.description}</p>
+          <Card 
+            className={cn(
+              "border-2 border-border shadow-lg transition-all cursor-pointer",
+              isWineSelected ? "border-primary bg-primary/5" : "hover:border-primary/50"
+            )}
+            onClick={() => setIsWineSelected(!isWineSelected)}
+          >
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>{packageDetails.wine.title}</CardTitle>
+                  <CardDescription>{packageDetails.wine.description}</CardDescription>
+                </div>
+                <Switch
+                  id="wine-package"
+                  checked={isWineSelected}
+                  onCheckedChange={(checked) => {
+                    setIsWineSelected(checked)
+                  }}
+                  onClick={(e) => e.stopPropagation()} // Prevent card click when clicking switch
+                />
               </div>
-              <Switch
-                id="wine-package"
-                checked={isWineSelected}
-                onCheckedChange={setIsWineSelected}
-              />
-            </div>
-            <ul className="mb-4 space-y-2">
-              {packageDetails.wine.features.map((feature, index) => (
-                <li key={index} className="flex items-center text-sm">
-                  <span className="mr-2">•</span>
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </div>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                {packageDetails.wine.features.map((feature, index) => (
+                  <li key={index} className="flex items-center text-sm">
+                    <Check className="mr-2 h-4 w-4 text-primary" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
         </div>
       </div>
 

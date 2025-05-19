@@ -27,6 +27,25 @@ type SearchParams = Promise<{
 export const metadata: Metadata = {
   title: 'Guest Invite',
   description: 'Accept your guest invite',
+  openGraph: {
+    title: 'Guest Invite',
+    description: 'Accept your guest invite',
+    type: 'website',
+    images: [
+      {
+        url: '/images/og-guest-invite.jpg', // You'll need to add this image to your public folder
+        width: 1200,
+        height: 630,
+        alt: 'Guest Invite Preview',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Guest Invite',
+    description: 'Accept your guest invite',
+    images: ['/images/og-guest-invite.jpg'],
+  },
 }
 
 export default async function GuestInvite({ searchParams }: { searchParams: SearchParams }) {

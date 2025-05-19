@@ -81,12 +81,12 @@ const config = {
           foreground: 'hsl(var(--popover-foreground))',
         },
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
+          DEFAULT: 'hsl(172.5 66% 50.4%)',
           foreground: 'hsl(var(--primary-foreground))',
         },
         ring: 'hsl(var(--ring))',
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
+          DEFAULT: 'hsl(328.6 85.5% 70.2%)',
           foreground: 'hsl(var(--secondary-foreground))',
         },
         success: 'hsl(var(--success))',
