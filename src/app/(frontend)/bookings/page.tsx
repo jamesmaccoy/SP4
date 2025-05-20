@@ -46,8 +46,8 @@ export default async function Bookings() {
       <PageClient />
       <div className="my-10 container space-y-10">
         <div className="flex justify-end mb-6">
-          <Link href="/estimate">
-            <Button variant="default">Estimate</Button>
+          <Link href="/estimates">
+            <Button variant="default">Estimates</Button>
           </Link>
         </div>
 

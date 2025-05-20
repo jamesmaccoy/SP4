@@ -17,11 +17,11 @@ import React, { FC, useCallback, useEffect } from 'react'
 
 type Props = {
   trigger: React.ReactNode
-  bookingId: string
-  type?: 'bookings' | 'estimates'
+  estimateId: string
+  type?: 'estimates' | 'estimates'
 }
 
-const InviteUrlDialog: FC<Props> = ({ trigger, bookingId, type = 'bookings' }) => {
+const InviteUrlDialog: FC<Props> = ({ trigger, estimateId, type = 'estimates' }) => {
   const [token, setToken] = React.useState<string | null>(null)
   const [copied, setCopied] = React.useState(false)
   const [tokenUrl, setTokenUrl] = React.useState<string>('')
@@ -32,7 +32,7 @@ const InviteUrlDialog: FC<Props> = ({ trigger, bookingId, type = 'bookings' }) =
     const fetchToken = async () => {
       try {
         setIsLoading(true)
-        const res = await fetch(`/api/${type}/${bookingId}/token`, {
+        const res = await fetch(`/api/${type}/${estimateId}/token`, {
           method: 'POST',
           credentials: 'include',
         })
@@ -51,7 +51,7 @@ const InviteUrlDialog: FC<Props> = ({ trigger, bookingId, type = 'bookings' }) =
     }
 
     fetchToken()
-  }, [bookingId, type])
+  }, [estimateId, type])
 
   //? When the tokenUrl is copied, set the copied state to false after a certain duration.
   useEffect(() => {
@@ -83,7 +83,7 @@ const InviteUrlDialog: FC<Props> = ({ trigger, bookingId, type = 'bookings' }) =
   const refreshTokenHandler = async () => {
     try {
       setIsLoading(true)
-      const res = await fetch(`/api/${type}/${bookingId}/refresh-token`, {
+      const res = await fetch(`/api/${type}/${estimateId}/refresh-token`, {
         method: 'POST',
         credentials: 'include',
       })
@@ -109,7 +109,7 @@ const InviteUrlDialog: FC<Props> = ({ trigger, bookingId, type = 'bookings' }) =
         <DialogHeader>
           <DialogTitle>Invite Guests</DialogTitle>
           <DialogDescription>
-            Share this link with your guests to invite them to the booking.
+            Share this link with your guests to invite them to the estimate.
           </DialogDescription>
         </DialogHeader>
 

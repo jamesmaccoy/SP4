@@ -1,59 +1,69 @@
-"use client"
+'use client'
 
 import { useState, useEffect } from "react"
-import type { User } from "@/payload-types"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { useRevenueCat } from "@/providers/RevenueCat"
-import { Purchases, type Package, type PurchasesError, ErrorCode, type Product } from "@revenuecat/purchases-js"
-import { useRouter, useSearchParams } from "next/navigation"
+import { Estimate, User } from '@/payload-types'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useRevenueCat } from '@/providers/RevenueCat'
+import { Purchases, type Package, ErrorCode, type Product } from '@revenuecat/purchases-js'
+import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
-import { Switch } from "@/components/ui/switch"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Check } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Switch } from '@/components/ui/switch'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Check } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import InviteUrlDialog from '../../estimates/[estimateId]/_components/invite-url-dialog'
+import { Media } from '@/components/Media'
+import { formatDateTime } from '@/utilities/formatDateTime'
+import { UserIcon } from 'lucide-react'
 
-// Add type for RevenueCat error with code
 interface RevenueCatError extends Error {
   code?: ErrorCode;
 }
 
-// Add type for RevenueCat product with additional properties
 interface RevenueCatProduct extends Product {
   price?: number;
   priceString?: string;
   currencyCode?: string;
 }
 
-export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration = 'N/A' }) {
+type Props = {
+  data: Estimate
+  user: User
+}
+
+export default function EstimateDetailsClientPage({ data, user }: Props) {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { isInitialized } = useRevenueCat()
-  
-  const [guests, setGuests] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
+
+  // Use estimate data for totals and duration
+  // const bookingTotal = data?.total ?? 'N/A' // REMOVE, not in Estimate type
+  // const bookingDuration = data?.duration ?? (
+  //   data?.fromDate && data?.toDate
+  //     ? Math.max(1, Math.round((new Date(data.toDate).getTime() - new Date(data.fromDate).getTime()) / (1000 * 60 * 60 * 24)))
+  //     : 'N/A'
+  // )
+  // Instead, calculate duration and use a fallback for total
+  const bookingDuration = data?.fromDate && data?.toDate
+    ? Math.max(1, Math.round((new Date(data.toDate).getTime() - new Date(data.fromDate).getTime()) / (1000 * 60 * 60 * 24)))
+    : 1;
+  // bookingTotal: you may want to fetch or calculate this, for now fallback to 'N/A' or 0
+  const bookingTotal = 0;
+  const postId = typeof data?.post === 'object' && data?.post?.id ? data.post.id : ''
+
+  const [guests, setGuests] = useState<User[]>(Array.isArray(data.guests) ? data.guests.filter(g => typeof g !== 'string') as User[] : [])
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+
   // Payment states
   const [paymentLoading, setPaymentLoading] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [offerings, setOfferings] = useState<Package[]>([])
   const [loadingOfferings, setLoadingOfferings] = useState(true)
   const [paymentSuccess, setPaymentSuccess] = useState(false)
-  
-  // Get postId from URL if available
-  const postId = searchParams?.get('postId') || ''
-  
-  console.log('Estimate page - Received postId:', postId)
-
-  // Calculate total price
-  const totalPrice = 
-    !isNaN(Number(bookingTotal)) && !isNaN(Number(bookingDuration))
-      ? Number(bookingTotal) * Number(bookingDuration)
-      : null
 
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null)
-  const [selectedDuration, setSelectedDuration] = useState<number>(1)
+  const [selectedDuration, setSelectedDuration] = useState<number>(typeof bookingDuration === 'number' ? bookingDuration : 1)
   const [isWineSelected, setIsWineSelected] = useState(false)
   const [packagePrice, setPackagePrice] = useState<number | null>(null)
 
@@ -235,8 +245,6 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
     const duration = Number(bookingDuration)
     let packageId = "per_night"
 
-    console.log("Selecting package for duration:", duration)
-
     // If wine package is selected, use the corresponding luxury package
     if (isWineSelected) {
       if (duration >= 29) {
@@ -256,15 +264,12 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
       
       if (selectedTier) {
         packageId = selectedTier.id
-        console.log("Selected tier:", selectedTier)
       } else {
         // Fallback to per night if no tier matches
         packageId = "per_night"
-        console.log("No tier matched, defaulting to per_night")
       }
     }
 
-    console.log("Selected package ID:", packageId)
     setSelectedPackage(packageId)
     setSelectedDuration(duration)
   }, [bookingDuration, isWineSelected])
@@ -280,26 +285,14 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
     setLoadingOfferings(true)
     try {
       const fetchedOfferings = await Purchases.getSharedInstance().getOfferings()
-      console.log("All Offerings:", fetchedOfferings.all)
-      
-      // Get the per_night offering specifically
       const perNightOffering = fetchedOfferings.all["per_night"]
-      
       if (perNightOffering && perNightOffering.availablePackages.length > 0) {
-        console.log("Per Night packages:", perNightOffering.availablePackages.map(pkg => ({
-          identifier: pkg.webBillingProduct?.identifier,
-          product: pkg.webBillingProduct,
-          priceString: (pkg.webBillingProduct as RevenueCatProduct)?.priceString,
-          price: (pkg.webBillingProduct as RevenueCatProduct)?.price
-        })))
         setOfferings(perNightOffering.availablePackages)
       } else {
-        console.warn("No packages found in per_night offering")
         setOfferings([])
       }
     } catch (err) {
       setPaymentError("Failed to load booking options")
-      console.error("Error loading offerings:", err)
     } finally {
       setLoadingOfferings(false)
     }
@@ -316,217 +309,76 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
       pkg.webBillingProduct?.identifier === selectedPackageDetails.revenueCatId
     )
 
-    console.log("Selected package details:", {
-      packageId: selectedPackage,
-      revenueCatId: selectedPackageDetails.revenueCatId,
-      foundPackage: packageToUse?.webBillingProduct?.identifier,
-      priceString: (packageToUse?.webBillingProduct as RevenueCatProduct)?.priceString,
-      price: (packageToUse?.webBillingProduct as RevenueCatProduct)?.price,
-      bookingTotal
-    })
-
     if (packageToUse?.webBillingProduct) {
       const product = packageToUse.webBillingProduct as RevenueCatProduct
       if (product.price) {
         const basePrice = Number(product.price)
         const multiplier = selectedPackageDetails.multiplier
         const calculatedPrice = basePrice * multiplier
-        console.log("Using RevenueCat price:", {
-          basePrice,
-          multiplier,
-          calculatedPrice
-        })
         setPackagePrice(calculatedPrice)
       } else {
-        // Fallback to local calculation if RevenueCat price is not available
         const basePrice = Number(bookingTotal)
         const multiplier = selectedPackageDetails.multiplier
         const calculatedPrice = basePrice * multiplier
-        console.log("Using local price calculation:", {
-          basePrice,
-          multiplier,
-          calculatedPrice
-        })
         setPackagePrice(calculatedPrice)
       }
     } else {
-      // Fallback to local calculation if package is not found
       const basePrice = Number(bookingTotal)
       const multiplier = selectedPackageDetails.multiplier
       const calculatedPrice = basePrice * multiplier
-      console.log("Using fallback price calculation:", {
-        basePrice,
-        multiplier,
-        calculatedPrice
-      })
       setPackagePrice(calculatedPrice)
     }
   }, [selectedPackage, offerings, bookingTotal])
 
   const calculateTotalPrice = () => {
     if (!packagePrice || !selectedDuration) return null
-    const total = packagePrice * selectedDuration
-    console.log("Calculating total price:", {
-      packagePrice,
-      selectedDuration,
-      total
-    })
-    return total
+    return packagePrice * selectedDuration
   }
 
-  // Format price with proper decimal places
   const formatPrice = (price: number | null) => {
     if (price === null) return "N/A"
     return `R${price.toFixed(2)}`
   }
 
-  useEffect(() => {
-    // Fetch guests
-    const fetchGuests = async () => {
-      try {
-        const response = await fetch('/api/guests')
-        if (!response.ok) {
-          throw new Error('Failed to fetch guests')
-        }
-        const data = await response.json()
-        setGuests(data)
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchGuests()
-  }, [])
-
-  const handleBooking = async () => {
+  const handleEstimate = async () => {
     setPaymentLoading(true)
     setPaymentError(null)
-    
     try {
-      // Find the appropriate package based on RevenueCat configuration
       const selectedPackageDetails = selectedPackage ? packageDetails[selectedPackage] : null
       if (!selectedPackageDetails) {
         throw new Error("No package selected")
       }
-
-      // Add detailed logging
-      console.log("RevenueCat Debug - Available Offerings:", offerings.map(pkg => ({
-        identifier: pkg.webBillingProduct?.identifier,
-        price: (pkg.webBillingProduct as RevenueCatProduct)?.price,
-        priceString: (pkg.webBillingProduct as RevenueCatProduct)?.priceString,
-        title: pkg.webBillingProduct?.title,
-        description: pkg.webBillingProduct?.description
-      })));
-
-      console.log("RevenueCat Debug - Selected Package Details:", {
-        packageId: selectedPackage,
-        revenueCatId: selectedPackageDetails.revenueCatId,
-        details: selectedPackageDetails
-      });
-
-      const bookingPackage = offerings.find(pkg => {
+      const estimatePackage = offerings.find(pkg => {
         const identifier = pkg.webBillingProduct?.identifier;
-        console.log("RevenueCat Debug - Comparing package:", {
-          checking: identifier,
-          against: selectedPackageDetails.revenueCatId,
-          fullPackage: pkg
-        });
         return identifier === selectedPackageDetails.revenueCatId;
       });
-      
-      if (!bookingPackage) {
-        console.error("Available packages:", offerings.map(pkg => ({
-          identifier: pkg.webBillingProduct?.identifier,
-          product: pkg.webBillingProduct
-        })))
-        throw new Error(`Booking package not found for ${selectedPackageDetails.revenueCatId}. Please contact support.`)
+      if (!estimatePackage) {
+        throw new Error(`Estimate package not found for ${selectedPackageDetails.revenueCatId}. Please contact support.`)
       }
-
-      // Log which package was found
-      console.log("Selected package:", {
-        identifier: bookingPackage.webBillingProduct?.identifier,
-        product: bookingPackage.webBillingProduct,
-        duration: selectedDuration
+      // Simulate purchase/estimate creation
+      const fromDate = new Date(data.fromDate)
+      const toDate = new Date(data.toDate)
+      const estimateData = {
+        postId: postId,
+        fromDate: fromDate.toISOString(),
+        toDate: toDate.toISOString(),
+      }
+      const response = await fetch(`/api/estimates/${data.id}/confirm`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(estimateData),
       })
-      
-      // Process the purchase with better error handling
-      try {
-        const purchaseResult = await Purchases.getSharedInstance().purchase({
-          rcPackage: bookingPackage,
-        })
-        
-        console.log("Purchase successful:", purchaseResult)
-        
-        // Calculate dates for the booking
-        const fromDate = new Date()
-        const toDate = new Date()
-        toDate.setDate(toDate.getDate() + selectedDuration)
-        
-        // After successful purchase, save booking to your backend
-        const bookingData = {
-          postId: postId,
-          fromDate: fromDate.toISOString(),
-          toDate: toDate.toISOString(),
-        }
-        
-        console.log('Sending booking data:', bookingData)
-        
-        const response = await fetch('/api/bookings', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(bookingData),
-        })
-        
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'Failed to save booking')
-        }
-        
-        // Set success state
-        setPaymentSuccess(true)
-        
-        // Redirect to confirmation page after a short delay
-        setTimeout(() => {
-          router.push(`/booking-confirmation?total=${calculateTotalPrice()}&duration=${selectedDuration}`)
-        }, 1500)
-        
-      } catch (purchaseError) {
-        console.error("Purchase error details:", purchaseError)
-        
-        // Handle specific RevenueCat error codes
-        if (purchaseError instanceof Error) {
-          const rcError = purchaseError as RevenueCatError
-          
-          if (rcError.code === ErrorCode.UserCancelledError) {
-            console.log("User cancelled the purchase")
-            setPaymentError("Purchase was cancelled. Please try again if you'd like to complete your booking.")
-            return
-          }
-          
-          if (rcError.code === ErrorCode.PurchaseInvalidError) {
-            console.log("Invalid purchase")
-            setPaymentError("There was an issue with the purchase. Please try again or contact support.")
-            return
-          }
-          
-          if (rcError.code === ErrorCode.NetworkError) {
-            console.log("Network error during purchase")
-            setPaymentError("Network error occurred. Please check your connection and try again.")
-            return
-          }
-        }
-        
-        // Generic error handling
-        setPaymentError("Failed to complete purchase. Please try again or contact support.")
-        console.error("Purchase error:", purchaseError)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to confirm estimate')
       }
-      
+      setPaymentSuccess(true)
+      setTimeout(() => {
+        router.push(`/estimate-confirmation?total=${calculateTotalPrice()}&duration=${selectedDuration}`)
+      }, 1500)
     } catch (error) {
-      console.error("Booking error:", error)
       setPaymentError(error instanceof Error ? error.message : "An unexpected error occurred")
     } finally {
       setPaymentLoading(false)
@@ -538,10 +390,10 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
     navigator.clipboard
       .writeText(urlToShare)
       .then(() => {
-        console.log("Booking URL copied to clipboard:", urlToShare)
+        // Optionally show a toast or message
       })
       .catch((err) => {
-        console.error("Failed to copy URL: ", err)
+        // Optionally show a toast or message
       })
   }
 
@@ -549,7 +401,7 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
     return (
       <div className="container py-10">
         <h1 className="text-4xl font-bold tracking-tighter mb-8">Start your curated stay</h1>
-        <p>Loading booking details...</p>
+        <p>Loading estimate details...</p>
       </div>
     )
   }
@@ -565,28 +417,96 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
 
   return (
     <div className="container py-10">
-      <h1 className="text-4xl font-bold tracking-tighter mb-8">Start your curated stay</h1>
+      {/* --- Estimate Info Section --- */}
+      {data && 'post' in data && typeof data?.post !== 'string' ? (
+        <div className="flex items-start flex-col md:flex-row gap-5 md:gap-10 mb-8">
+          <div className="md:max-w-[450px] w-full rounded-md overflow-hidden">
+            {!!data?.post.meta?.image && <Media resource={data?.post.meta?.image || undefined} />}
+          </div>
+          <div className="md:py-5 py-3">
+            <h1 className="text-4xl mb-3 font-bold">{data?.post.title}</h1>
+            <p className="text-lg font-medium">
+              Date Estimated: {formatDateTime(data?.createdAt)}
+            </p>
+            <p className="text-lg font-medium">Estimate Start: {formatDateTime(data?.fromDate)}</p>
+            <p className="text-lg font-medium">Estimate End: {formatDateTime(data?.toDate)}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-8">Error loading estimate details</div>
+      )}
 
+      {/* --- Summary Header Section --- */}
+      <div className="pt-12 pb-6">
+        <div className="bg-muted p-6 rounded-lg border border-border mb-6 text-center">
+          <h2 className="text-3xl font-semibold mb-2">R{bookingTotal}</h2>
+          <p className="text-lg text-muted-foreground">Total for {bookingDuration} nights</p>
+        </div>
+      </div>
+
+      {/* --- Customer & Guests Section --- */}
+      <div className="mb-8 max-w-screen-md mx-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold">Guests</h2>
+          {data &&
+            'customer' in data &&
+            typeof data?.customer !== 'string' &&
+            data.customer?.id === user.id && (
+              <InviteUrlDialog
+                estimateId={data.id}
+                type="estimates"
+                trigger={
+                  <Button>
+                    <span>Invite Guest</span>
+                  </Button>
+                }
+              />
+            )}
+        </div>
+        <div className="mt-2 space-y-3">
+          <div className="shadow-sm p-2 border border-border rounded-lg flex items-center gap-2">
+            <div className="p-2 border border-border rounded-full">
+              <UserIcon className="size-6" />
+            </div>
+            <div>
+              <div>{typeof data.customer === 'string' ? 'Customer' : data.customer?.name}</div>
+              <div className="font-medium text-sm">Customer</div>
+            </div>
+          </div>
+          {guests.map((guest) => (
+            <div key={guest.id} className="shadow-sm p-2 border border-border rounded-lg flex items-center gap-2">
+              <div className="p-2 border border-border rounded-full">
+                <UserIcon className="size-6" />
+              </div>
+              <div>
+                <div>{guest.name}</div>
+                <div className="font-medium text-sm">Guest</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* --- Interactive Estimate UI Section --- */}
+      <h1 className="text-4xl font-bold tracking-tighter mb-8">Start your curated stay</h1>
       {/* Payment Success Message */}
       {paymentSuccess && (
         <div className="mb-6 p-4 border border-green-200 bg-green-50 rounded-md">
-          <h3 className="text-green-800 font-semibold">Booking Successful!</h3>
+          <h3 className="text-green-800 font-semibold">Estimate Successful!</h3>
           <p className="text-green-700">
-            Your booking has been confirmed. Redirecting to confirmation page...
+            Your estimate has been confirmed. Redirecting to confirmation page...
           </p>
         </div>
       )}
-
       {/* Payment Error Message */}
       {paymentError && (
         <div className="mb-6 p-4 border border-red-200 bg-red-50 rounded-md">
-          <h3 className="text-red-800 font-semibold">Booking Error</h3>
+          <h3 className="text-red-800 font-semibold">Estimate Error</h3>
           <p className="text-red-700">
             {paymentError}
           </p>
         </div>
       )}
-
       {/* Package Selection */}
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Your Selected Package</h2>
@@ -617,7 +537,6 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
               </span>
             </CardFooter>
           </Card>
-
           {/* Wine Package Add-on */}
           <Card 
             className={cn(
@@ -655,10 +574,9 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
           </Card>
         </div>
       </div>
-
-      {/* Booking Summary */}
+      {/* Estimate Summary */}
       <div className="mb-8 bg-muted p-6 rounded-lg border border-border">
-        <h2 className="text-2xl font-semibold mb-4">Booking Summary</h2>
+        <h2 className="text-2xl font-semibold mb-4">Estimate Summary</h2>
         <div className="flex justify-between items-center mb-4">
           <span className="text-muted-foreground">Package:</span>
           <span className="font-medium">
@@ -681,29 +599,27 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
             {formatPrice(calculateTotalPrice())}
           </span>
         </div>
-
-        {/* Complete Booking Button */}
+        {/* Complete Estimate Button */}
         <Button
-          onClick={handleBooking}
+          onClick={handleEstimate}
           className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
           disabled={paymentLoading || paymentSuccess || !postId || !selectedPackage}
         >
           {paymentLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing Payment...
+              Processing...
             </>
           ) : paymentSuccess ? (
-            "Booking Confirmed!"
+            "Estimate Confirmed!"
           ) : !postId ? (
             "Missing Property Information"
           ) : !selectedPackage ? (
             "Please Select a Package"
           ) : (
-            `Complete Booking - ${formatPrice(calculateTotalPrice())}`
+            `Complete Estimate - ${formatPrice(calculateTotalPrice())}`
           )}
         </Button>
-        
         {!postId && (
           <p className="text-red-500 text-sm mt-2">
             Property information is missing. Please start from the property page.
@@ -715,29 +631,7 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
           </p>
         )}
       </div>
-
-      {/* Share Booking Section */}
-      <div className="mb-8 flex items-center gap-3 bg-muted p-4 rounded-lg border border-border">
-        <Input
-          type="text"
-          value={typeof window !== 'undefined' ? window.location.href : ''}
-          readOnly
-          className="flex-grow bg-background cursor-default"
-        />
-        <Button variant="secondary" onClick={handleShare}>Share Booking</Button>
-      </div>
-
-      {/* Guests Section */}
-      <h2 className="text-2xl font-semibold mt-8 mb-4">Available Guests</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {guests.map((guest) => (
-          <div key={guest.id} className="bg-card p-6 rounded-lg shadow-sm border border-border">
-            <h3 className="text-xl font-semibold mb-3">{guest.name}</h3>
-            <p className="text-muted-foreground mb-2">Email: {guest.email}</p>
-            <p className="text-muted-foreground">Role: {guest.role?.join(', ')}</p>
-          </div>
-        ))}
-      </div>
+   
     </div>
   )
 } 

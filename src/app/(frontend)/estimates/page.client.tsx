@@ -1,18 +1,16 @@
 'use client'
 
-import React, { Suspense } from 'react' // Import Suspense
+import React, { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useUserContext } from '@/context/UserContext'
 import { useSubscription } from '@/hooks/useSubscription'
-import { Button } from '@/components/ui/button' // Assuming you have a Button component
-import EstimateClient from './page.client'
+import { Button } from '@/components/ui/button'
 
 export default function EstimatePage() {
   const router = useRouter()
   const { currentUser } = useUserContext()
   const { isSubscribed, isLoading, error } = useSubscription()
 
-  // Only redirect if we're certain about the subscription status
   React.useEffect(() => {
     if (!isLoading && !error) {
       if (!currentUser) {
@@ -41,7 +39,6 @@ export default function EstimatePage() {
     )
   }
 
-  // Don't return null here - wait for the useEffect to handle redirects
   if (!currentUser || !isSubscribed) {
     return (
       <div className="container py-12">
@@ -53,15 +50,13 @@ export default function EstimatePage() {
 
   return (
     <>
-      {/* Wrap the part using useSearchParams in Suspense */}
-      <Suspense fallback={<EstimateClient />}>
+      <Suspense fallback={<EstimateLoading />}>
         <EstimateInner />
       </Suspense>
     </>
   )
-} 
+}
 
-// New component to contain logic using useSearchParams
 function EstimateInner() {
   const searchParams = useSearchParams()
   const bookingTotal = searchParams.get('total') ?? 'N/A'
@@ -69,24 +64,15 @@ function EstimateInner() {
 
   return (
     <>
-      {/* Booking Summary Header */}
-      <div className="pt-12 pb-6">
-        <div className="bg-muted p-6 rounded-lg border border-border mb-6 text-center">
-          <h2 className="text-3xl font-semibold mb-2">R{bookingTotal}</h2>
-          <p className="text-lg text-muted-foreground">Total for {bookingDuration} nights</p>
-        </div>
-      </div>
-      {/* The actual premium content */}
-      <EstimateClient bookingTotal={bookingTotal} bookingDuration={bookingDuration} />
+      
     </>
   )
 }
 
-// Simple loading component for the Suspense fallback
 function EstimateLoading() {
   return (
     <div className="container py-12 text-center">
       <p>Loading booking details...</p>
     </div>
   )
-} 
+}

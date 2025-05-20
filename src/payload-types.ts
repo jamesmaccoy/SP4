@@ -68,6 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     bookings: Booking;
+    estimates: Estimate;
     pages: Page;
     posts: Post;
     media: Media;
@@ -84,6 +85,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     bookings: BookingsSelect<false> | BookingsSelect<true>;
+    estimates: EstimatesSelect<false> | EstimatesSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -331,6 +333,25 @@ export interface Category {
         id?: string | null;
       }[]
     | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "estimates".
+ */
+export interface Estimate {
+  id: string;
+  title: string;
+  customer?: (string | null) | User;
+  token?: string | null;
+  guests?: (string | User)[] | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  post: string | Post;
+  paymentStatus?: ('paid' | 'unpaid') | null;
+  fromDate: string;
+  toDate: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -842,6 +863,10 @@ export interface PayloadLockedDocument {
         value: string | Booking;
       } | null)
     | ({
+        relationTo: 'estimates';
+        value: string | Estimate;
+      } | null)
+    | ({
         relationTo: 'pages';
         value: string | Page;
       } | null)
@@ -924,6 +949,24 @@ export interface PayloadMigration {
  * via the `definition` "bookings_select".
  */
 export interface BookingsSelect<T extends boolean = true> {
+  title?: T;
+  customer?: T;
+  token?: T;
+  guests?: T;
+  slug?: T;
+  slugLock?: T;
+  post?: T;
+  paymentStatus?: T;
+  fromDate?: T;
+  toDate?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "estimates_select".
+ */
+export interface EstimatesSelect<T extends boolean = true> {
   title?: T;
   customer?: T;
   token?: T;
