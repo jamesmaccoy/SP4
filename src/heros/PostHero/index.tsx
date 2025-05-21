@@ -52,11 +52,15 @@ export const PostHero: React.FC<{
                 </div>
               </div>
             )}
-            {publishedAt && (
+            {typeof post.baseRate === 'number' ? (
               <div className="flex flex-col gap-1">
-                <p className="text-sm">Date Published</p>
-
-                <time dateTime={publishedAt}>{formatDateTime(publishedAt)}</time>
+                <p className="text-sm">Base Rate</p>
+                <span>R{post.baseRate}/night</span>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1">
+                <p className="text-sm">Base Rate</p>
+                <span>N/A</span>
               </div>
             )}
           </div>

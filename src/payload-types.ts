@@ -215,6 +215,7 @@ export interface Post {
         name?: string | null;
       }[]
     | null;
+  baseRate?: number | null;
   slug?: string | null;
   slugLock?: boolean | null;
   updatedAt: string;
@@ -1098,6 +1099,7 @@ export interface PostsSelect<T extends boolean = true> {
         id?: T;
         name?: T;
       };
+  baseRate?: T;
   slug?: T;
   slugLock?: T;
   updatedAt?: T;
@@ -1615,7 +1617,6 @@ export interface CodeBlock {
  * via the `definition` "StayDurationBlock".
  */
 export interface StayDurationBlock {
-  baseRate: number;
   id?: string | null;
   blockName?: string | null;
   blockType: 'stayDuration';

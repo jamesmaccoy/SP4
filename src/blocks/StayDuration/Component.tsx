@@ -13,6 +13,7 @@ import type { StayDurationBlock } from './types'
 export type StayDurationProps = StayDurationBlock & {
   className?: string
   postId: string
+  baseRate: number
 }
 
 // Define package tiers with their thresholds and multipliers
@@ -154,6 +155,10 @@ export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate 
           <span className="font-medium">{currentTier.title}</span>
         </div>
         <div className="flex justify-between items-center">
+          <span className="text-xs text-muted-foreground">Property Slug:</span>
+          <span className="font-mono text-xs">{postId}</span>
+        </div>
+        <div className="flex justify-between items-center">
           <span className="text-sm text-muted-foreground">Base Rate:</span>
           <span className="font-medium">R{baseRate}/night</span>
         </div>
@@ -173,7 +178,9 @@ export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate 
       <div className="pt-4 border-t border-border">
         <div className="flex justify-between items-center">
           <span className="text-lg font-medium">Total:</span>
-          <span className="text-2xl font-bold">R{totalPrice.toFixed(2)}</span>
+          <span className="text-2xl font-bold">
+            R{typeof totalPrice === 'number' && !isNaN(totalPrice) ? totalPrice.toFixed(2) : '0.00'}
+          </span>
         </div>
       </div>
 
@@ -183,7 +190,7 @@ export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate 
         disabled={!startDate || !endDate}
         onClick={() => {
           // Navigate to join page with parameters
-          window.location.href = `/estimate?total=${baseRate}&duration=${selectedDuration}&postId=${postId}`
+          window.location.href = `/estimate?total=${totalPrice}&duration=${selectedDuration}&postId=${postId}`
         }}
       >
         {!startDate || !endDate ? 'Select dates to book' : 'Request Availability'}
