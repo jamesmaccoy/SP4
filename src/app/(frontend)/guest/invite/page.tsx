@@ -30,8 +30,8 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
   
   if (!token) {
     return {
-      title: 'Guest Invite',
-      description: 'Accept your guest invite',
+      title: 'You have been invited as a guest by a customer of Simple Plek',
+      description: 'Register and accept your guest invite to be permitted on the property',
     }
   }
 
