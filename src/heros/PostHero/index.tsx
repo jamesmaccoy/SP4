@@ -56,8 +56,9 @@ export const PostHero: React.FC<{
             <Button asChild variant="secondary" className="flex flex-col gap-1 justify-center items-start min-w-[120px]">
               <a href={`https://www.simpleplek.co.za/${post?.slug}`} target="_blank" rel="noopener noreferrer">
                 
-                <span>{typeof post.baseRate === 'number' ? `R${post.baseRate}/night` : 'N/A'}</span>
-                
+                {typeof post.baseRate === 'number' && (
+                  <span>From R{(post.baseRate * 0.7).toFixed(2)}/night</span>
+                )}
               </a>
             </Button>
           </div>
