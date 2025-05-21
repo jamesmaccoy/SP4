@@ -3,10 +3,10 @@ import { jwtDecode } from 'jwt-decode'
 import type { User } from './payload-types' // Ensure User type includes 'role' (as an array of strings)
 
 // Paths that require authentication and subscription
-const PROTECTED_PATHS = ['/admin', '/estimate']
+const PROTECTED_PATHS = ['/admin']
 
 // Paths that are always allowed
-const PUBLIC_PATHS = ['/login', '/subscribe', '/register']
+const PUBLIC_PATHS = ['/login', '/subscribe', '/register', '/estimate']
 
 // Define an array of professional entitlement IDs
 const PROFESSIONAL_ENTITLEMENT_IDS = ['pro', 'simpleplek_admin'] // CONFIRM THESE IDs
