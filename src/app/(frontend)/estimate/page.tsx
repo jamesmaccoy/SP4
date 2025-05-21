@@ -12,20 +12,13 @@ export default function EstimatePage() {
   const { currentUser } = useUserContext()
   const { isSubscribed, isLoading, error } = useSubscription()
 
-  // Only redirect if we're certain about the subscription status
-  React.useEffect(() => {
-    if (!isLoading && !error) {
-      if (!currentUser) {
-        router.push('/login')
-      } else if (!isSubscribed) {
-        router.push('/subscribe')
-      }
-    }
-  }, [currentUser, isSubscribed, isLoading, error, router])
-
-  // Add Suspense for authentication state
   if (isLoading) {
-    return <EstimateLoading />
+    return (
+      <div className="container py-12">
+        <h1 className="text-3xl font-bold mb-6">Estimate</h1>
+        <p>Loading...</p>
+      </div>
+    )
   }
 
   if (error) {
@@ -37,15 +30,13 @@ export default function EstimatePage() {
     )
   }
 
-  // Wait for authentication state to resolve before redirecting or rendering
-  if (!currentUser || !isSubscribed) {
-    return <EstimateLoading />
-  }
-
   return (
-    <Suspense fallback={<EstimateLoading />}>
-      <EstimateInner />
-    </Suspense>
+    <>
+      {/* Wrap the part using useSearchParams in Suspense */}
+      <Suspense fallback={<EstimateClient />}>
+        <EstimateInner />
+      </Suspense>
+    </>
   )
 } 
 
