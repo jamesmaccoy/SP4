@@ -333,7 +333,13 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
   const baseRate = !isNaN(Number(bookingTotal)) ? Number(bookingTotal) : null
   // Calculate which price to show
   const baseTotal = baseRate && selectedDuration ? baseRate * selectedDuration : null
-  const displayTotal = Number(bookingTotal)
+  const totalFromStayDuration = !isNaN(Number(searchParams.get('total'))) ? Number(searchParams.get('total')) : null;
+
+  // For wine package, recalculate total as wine per-night price * selectedDuration
+  let displayTotal = totalFromStayDuration;
+  if (isWineSelected && packagePrice && selectedDuration) {
+    displayTotal = packagePrice * selectedDuration;
+  }
 
   // Format price with proper decimal places
   const formatPrice = (price: number | null) => {
