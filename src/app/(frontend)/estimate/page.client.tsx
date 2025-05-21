@@ -384,16 +384,19 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
     // Fetch guests
     const fetchGuests = async () => {
       try {
-        const response = await fetch('/api/guests')
+        console.log("Fetching guests...");
+        const response = await fetch('/api/guests');
+        console.log("Guest response:", response);
         if (!response.ok) {
-          throw new Error('Failed to fetch guests')
+          throw new Error('Failed to fetch guests');
         }
-        const data = await response.json()
-        setGuests(data)
+        const data = await response.json();
+        console.log("Guest data:", data);
+        setGuests(data);
       } catch (err) {
-        setError(err.message)
+        setError(err.message);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 

@@ -12,6 +12,7 @@ import type { StayDurationBlock } from './types'
 
 export type StayDurationProps = StayDurationBlock & {
   className?: string
+  postId: string
 }
 
 // Define package tiers with their thresholds and multipliers
@@ -60,7 +61,7 @@ const packageTiers = [
   }
 ]
 
-export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate = 150, blockType }) => {
+export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate = 150, blockType, postId }) => {
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
   const [selectedDuration, setSelectedDuration] = useState(1)
@@ -182,7 +183,7 @@ export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate 
         disabled={!startDate || !endDate}
         onClick={() => {
           // Navigate to join page with parameters
-          window.location.href = `/estimate?total=${baseRate}&duration=${selectedDuration}`
+          window.location.href = `/estimate?total=${baseRate}&duration=${selectedDuration}&postId=${postId}`
         }}
       >
         {!startDate || !endDate ? 'Select dates to book' : 'Request Availability'}
