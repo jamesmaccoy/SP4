@@ -5,6 +5,7 @@ import type { Post } from '@/payload-types'
 
 import { Media } from '@/components/Media'
 import { formatAuthors } from '@/utilities/formatAuthors'
+import { Button } from '@/components/ui/button'
 
 export const PostHero: React.FC<{
   post: Post
@@ -52,17 +53,13 @@ export const PostHero: React.FC<{
                 </div>
               </div>
             )}
-            {typeof post.baseRate === 'number' ? (
-              <div className="flex flex-col gap-1">
-                <p className="text-sm">Base Rate</p>
-                <span>R{post.baseRate}/night</span>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-1">
-                <p className="text-sm">Base Rate</p>
-                <span>N/A</span>
-              </div>
-            )}
+            <Button asChild variant="secondary" className="flex flex-col gap-1 justify-center items-start min-w-[120px]">
+              <a href={`https://www.simpleplek.co.za/${post?.slug}`} target="_blank" rel="noopener noreferrer">
+                
+                <span>{typeof post.baseRate === 'number' ? `R${post.baseRate}/night` : 'N/A'}</span>
+                
+              </a>
+            </Button>
           </div>
         </div>
       </div>
