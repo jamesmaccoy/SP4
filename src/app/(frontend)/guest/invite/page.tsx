@@ -38,16 +38,16 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
   const tokenData = await fetchTokenData(token)
   if (!tokenData) {
     return {
-      title: 'Guest Invite',
-      description: 'Accept your guest invite',
+      title: 'You have been invited as a guest by a customer of Simple Plek',
+      description: 'Register and accept your guest invite to be permitted on the property',
     }
   }
 
   const booking = await fetchBookingDetails(tokenData.bookingId, token)
   if (!booking || !booking.post) {
     return {
-      title: 'Guest Invite',
-      description: 'Accept your guest invite',
+      title: 'You have been invited as a guest by a customer of Simple Plek',
+      description: 'Register and accept your guest invite to be permitted on the property',
     }
   }
 
@@ -56,17 +56,32 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
   
   let postImage: string | null = null
   if (post) {
-    if (post.meta?.image && typeof post.meta.image === 'object' && 'url' in post.meta.image) {
+    if (
+      post.meta?.image &&
+      typeof post.meta.image === 'object' &&
+      'url' in post.meta.image &&
+      post.meta.image.url
+    ) {
       const ogUrl = post.meta.image.sizes?.og?.url
       postImage = ogUrl ? serverUrl + ogUrl : serverUrl + post.meta.image.url
-    } else if (post.heroImage && typeof post.heroImage === 'object' && 'url' in post.heroImage) {
+    } else if (
+      post.heroImage &&
+      typeof post.heroImage === 'object' &&
+      'url' in post.heroImage &&
+      post.heroImage.url
+    ) {
       const ogUrl = post.heroImage.sizes?.og?.url
       postImage = ogUrl ? serverUrl + ogUrl : serverUrl + post.heroImage.url
     }
   }
 
+  // Provide a fallback image if postImage is still null or undefined
+  if (!postImage) {
+    postImage = serverUrl + '/api/media/file/theshack%20lounge%20diy.jpg'
+  }
+
   return {
-    title: 'Guest Invite',
+    title: 'You have been invited as a guest by a customer of Simple Plek',
     description: 'Accept your guest invite',
     openGraph: {
       title: 'Guest Invite',
