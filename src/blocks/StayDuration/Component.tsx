@@ -155,14 +155,6 @@ export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate 
           <span className="font-medium">{currentTier.title}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-xs text-muted-foreground">Property Slug:</span>
-          <span className="font-mono text-xs">{postId}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">Base Rate:</span>
-          <span className="font-medium">R{baseRate}/night</span>
-        </div>
-        <div className="flex justify-between items-center">
           <span className="text-sm text-muted-foreground">Duration:</span>
           <span className="font-medium">{selectedDuration} night{selectedDuration !== 1 ? 's' : ''}</span>
         </div>

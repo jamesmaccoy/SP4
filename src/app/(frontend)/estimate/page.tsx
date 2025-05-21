@@ -23,13 +23,9 @@ export default function EstimatePage() {
     }
   }, [currentUser, isSubscribed, isLoading, error, router])
 
+  // Add Suspense for authentication state
   if (isLoading) {
-    return (
-      <div className="container py-12">
-        <h1 className="text-3xl font-bold mb-6">Estimate</h1>
-        <p>Loading...</p>
-      </div>
-    )
+    return <EstimateLoading />
   }
 
   if (error) {
@@ -41,23 +37,15 @@ export default function EstimatePage() {
     )
   }
 
-  // Don't return null here - wait for the useEffect to handle redirects
+  // Wait for authentication state to resolve before redirecting or rendering
   if (!currentUser || !isSubscribed) {
-    return (
-      <div className="container py-12">
-        <h1 className="text-3xl font-bold mb-6">Estimate</h1>
-        <p>Loading...</p>
-      </div>
-    )
+    return <EstimateLoading />
   }
 
   return (
-    <>
-      {/* Wrap the part using useSearchParams in Suspense */}
-      <Suspense fallback={<EstimateClient />}>
-        <EstimateInner />
-      </Suspense>
-    </>
+    <Suspense fallback={<EstimateLoading />}>
+      <EstimateInner />
+    </Suspense>
   )
 } 
 
