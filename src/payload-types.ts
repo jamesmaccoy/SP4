@@ -1617,6 +1617,7 @@ export interface CodeBlock {
  * via the `definition` "StayDurationBlock".
  */
 export interface StayDurationBlock {
+  baseRateOverride: number;
   id?: string | null;
   blockName?: string | null;
   blockType: 'stayDuration';

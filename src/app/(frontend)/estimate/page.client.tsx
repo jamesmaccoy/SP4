@@ -12,6 +12,8 @@ import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useUserContext } from '@/context/UserContext'
+import { useSubscription } from '@/hooks/useSubscription'
 
 // Add type for RevenueCat error with code
 interface RevenueCatError extends Error {
@@ -29,6 +31,8 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isInitialized } = useRevenueCat()
+  const { currentUser, isLoading: isUserLoading } = useUserContext()
+  const { isSubscribed, isLoading: isSubscriptionLoading } = useSubscription()
   
   const [guests, setGuests] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -56,6 +60,7 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
   const [selectedDuration, setSelectedDuration] = useState<number>(1)
   const [isWineSelected, setIsWineSelected] = useState(false)
   const [packagePrice, setPackagePrice] = useState<number | null>(null)
+  const [packageTotal, setPackageTotal] = useState<number | null>(null)
 
   // Define package tiers with their thresholds and multipliers
   const packageTiers = [
@@ -307,72 +312,28 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
 
   // Update package price when package or duration changes
   useEffect(() => {
-    if (!selectedPackage || !offerings.length) return
+    if (!selectedPackage) return
 
     const selectedPackageDetails = packageDetails[selectedPackage]
     if (!selectedPackageDetails) return
 
-    const packageToUse = offerings.find(pkg => 
-      pkg.webBillingProduct?.identifier === selectedPackageDetails.revenueCatId
-    )
+    const basePrice = Number(bookingTotal)
+    const multiplier = selectedPackageDetails.multiplier
+    const discountedPerNight = basePrice * multiplier
+    const discountedTotal = discountedPerNight * selectedDuration
+    setPackagePrice(discountedPerNight)
+    setPackageTotal(discountedTotal)
+  }, [selectedPackage, bookingTotal, selectedDuration])
 
-    console.log("Selected package details:", {
-      packageId: selectedPackage,
-      revenueCatId: selectedPackageDetails.revenueCatId,
-      foundPackage: packageToUse?.webBillingProduct?.identifier,
-      priceString: (packageToUse?.webBillingProduct as RevenueCatProduct)?.priceString,
-      price: (packageToUse?.webBillingProduct as RevenueCatProduct)?.price,
-      bookingTotal
-    })
-
-    if (packageToUse?.webBillingProduct) {
-      const product = packageToUse.webBillingProduct as RevenueCatProduct
-      if (product.price) {
-        const basePrice = Number(product.price)
-        const multiplier = selectedPackageDetails.multiplier
-        const calculatedPrice = basePrice * multiplier
-        console.log("Using RevenueCat price:", {
-          basePrice,
-          multiplier,
-          calculatedPrice
-        })
-        setPackagePrice(calculatedPrice)
-      } else {
-        // Fallback to local calculation if RevenueCat price is not available
-        const basePrice = Number(bookingTotal)
-        const multiplier = selectedPackageDetails.multiplier
-        const calculatedPrice = basePrice * multiplier
-        console.log("Using local price calculation:", {
-          basePrice,
-          multiplier,
-          calculatedPrice
-        })
-        setPackagePrice(calculatedPrice)
-      }
-    } else {
-      // Fallback to local calculation if package is not found
-      const basePrice = Number(bookingTotal)
-      const multiplier = selectedPackageDetails.multiplier
-      const calculatedPrice = basePrice * multiplier
-      console.log("Using fallback price calculation:", {
-        basePrice,
-        multiplier,
-        calculatedPrice
-      })
-      setPackagePrice(calculatedPrice)
-    }
-  }, [selectedPackage, offerings, bookingTotal])
-
-  const calculateTotalPrice = () => {
-    if (!packagePrice || !selectedDuration) return null
-    const total = packagePrice * selectedDuration
-    console.log("Calculating total price:", {
-      packagePrice,
-      selectedDuration,
-      total
-    })
-    return total
-  }
+  // Helper to determine user role
+  const isCustomer = currentUser?.role?.includes('customer')
+  const isAdmin = currentUser?.role?.includes('admin')
+  const canSeePackage = (isCustomer || isAdmin) && isSubscribed
+  // Calculate base rate per night
+  const baseRate = !isNaN(Number(bookingTotal)) ? Number(bookingTotal) : null
+  // Calculate which price to show
+  const baseTotal = baseRate && selectedDuration ? baseRate * selectedDuration : null
+  const displayTotal = canSeePackage ? packageTotal : baseTotal
 
   // Format price with proper decimal places
   const formatPrice = (price: number | null) => {
@@ -494,7 +455,7 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
         
         // Redirect to confirmation page after a short delay
         setTimeout(() => {
-          router.push(`/booking-confirmation?total=${calculateTotalPrice()}&duration=${selectedDuration}`)
+          router.push(`/booking-confirmation?total=${displayTotal}&duration=${selectedDuration}`)
         }, 1500)
         
       } catch (purchaseError) {
@@ -570,6 +531,17 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
     <div className="container py-10">
       <h1 className="text-4xl font-bold tracking-tighter mb-8">Start your curated stay</h1>
 
+      {/* User role info */}
+      <div className="mb-4">
+        {isUserLoading || isSubscriptionLoading ? (
+          <span>Loading user info...</span>
+        ) : currentUser ? (
+          <span className="text-sm text-muted-foreground">Logged in as: <b>{currentUser.name}</b> ({currentUser.role?.join(', ')})</span>
+        ) : (
+          <span className="text-sm text-muted-foreground">Not logged in. Showing base rate only.</span>
+        )}
+      </div>
+
       {/* Payment Success Message */}
       {paymentSuccess && (
         <div className="mb-6 p-4 border border-green-200 bg-green-50 rounded-md">
@@ -616,7 +588,8 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
             </CardContent>
             <CardFooter>
               <span className="text-2xl font-bold">
-                {formatPrice(packagePrice)}/night
+                {formatPrice(baseRate)}
+                <span className="ml-2 text-xs text-yellow-600">(Base rate)</span>
               </span>
             </CardFooter>
           </Card>
@@ -671,9 +644,24 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
         <div className="flex justify-between items-center mb-4">
           <span className="text-muted-foreground">Rate per night:</span>
           <span className="font-medium">
-            {formatPrice(packagePrice)}
+            {formatPrice(baseRate)}
+            <span className="ml-2 text-xs text-yellow-600">(Base rate)</span>
           </span>
         </div>
+        {/* Show locked package rate preview for non-subscribers */}
+        {packagePrice && packagePrice !== baseRate && (
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-muted-foreground">Package Rate:</span>
+            <span className="font-medium">
+              {formatPrice(packagePrice)}
+              {canSeePackage ? (
+                <span className="ml-2 text-xs text-green-600">(Your rate)</span>
+              ) : (
+                <span className="ml-2 text-xs text-gray-500">(Login & subscribe to unlock)</span>
+              )}
+            </span>
+          </div>
+        )}
         <div className="flex justify-between items-center mb-4">
           <span className="text-muted-foreground">Duration:</span>
           <span className="font-medium">{selectedDuration} nights</span>
@@ -681,7 +669,7 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
         <div className="flex justify-between items-center mb-6">
           <span className="text-muted-foreground">Total:</span>
           <span className="text-2xl font-bold">
-            {formatPrice(calculateTotalPrice())}
+            {formatPrice(displayTotal)}
           </span>
         </div>
 
@@ -689,7 +677,7 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
         <Button
           onClick={handleBooking}
           className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-          disabled={paymentLoading || paymentSuccess || !postId || !selectedPackage}
+          disabled={paymentLoading || paymentSuccess || !postId || !selectedPackage || !canSeePackage}
         >
           {paymentLoading ? (
             <>
@@ -702,8 +690,10 @@ export default function EstimateClient({ bookingTotal = 'N/A', bookingDuration =
             "Missing Property Information"
           ) : !selectedPackage ? (
             "Please Select a Package"
+          ) : !canSeePackage ? (
+            "Login & subscribe to unlock package pricing"
           ) : (
-            `Complete Booking - ${formatPrice(calculateTotalPrice())}`
+            `Complete Booking - ${formatPrice(displayTotal)}`
           )}
         </Button>
         

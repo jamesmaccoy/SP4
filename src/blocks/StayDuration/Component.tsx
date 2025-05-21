@@ -9,11 +9,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react'
 import type { SelectSingleEventHandler } from 'react-day-picker'
 import type { StayDurationBlock } from './types'
+import { useUserContext } from '@/context/UserContext'
+import { useSubscription } from '@/hooks/useSubscription'
 
 export type StayDurationProps = StayDurationBlock & {
   className?: string
   postId: string
   baseRate: number
+  baseRateOverride?: number
 }
 
 // Define package tiers with their thresholds and multipliers
@@ -62,12 +65,19 @@ const packageTiers = [
   }
 ]
 
-export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate = 150, blockType, postId }) => {
+export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate = 150, baseRateOverride, blockType, postId }) => {
+  const effectiveBaseRate = typeof baseRateOverride === 'number' ? baseRateOverride : baseRate;
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
   const [selectedDuration, setSelectedDuration] = useState(1)
-  const [totalPrice, setTotalPrice] = useState(baseRate)
+  const [totalPrice, setTotalPrice] = useState(effectiveBaseRate)
   const [currentTier, setCurrentTier] = useState(packageTiers[0])
+  const { currentUser } = useUserContext()
+  const { isSubscribed } = useSubscription()
+  const isCustomer = currentUser?.role?.includes('customer')
+  const canSeeDiscount = isCustomer && isSubscribed
+  const packageTotal = effectiveBaseRate * selectedDuration * currentTier.multiplier
+  const baseTotal = effectiveBaseRate * selectedDuration
 
   useEffect(() => {
     if (startDate && endDate) {
@@ -81,9 +91,9 @@ export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate 
 
       setSelectedDuration(diffDays)
       setCurrentTier(tier)
-      setTotalPrice(baseRate * diffDays * tier.multiplier)
+      setTotalPrice(effectiveBaseRate * diffDays * tier.multiplier)
     }
-  }, [startDate, endDate, baseRate])
+  }, [startDate, endDate, effectiveBaseRate])
 
   if (blockType !== 'stayDuration') {
     return null
@@ -155,13 +165,29 @@ export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate 
           <span className="font-medium">{currentTier.title}</span>
         </div>
         <div className="flex justify-between items-center">
+          <span className="text-xs text-muted-foreground">Property Slug:</span>
+          <span className="font-mono text-xs">{postId}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-muted-foreground">Base Rate:</span>
+          <span className="font-medium">R{effectiveBaseRate}/night</span>
+        </div>
+        <div className="flex justify-between items-center">
           <span className="text-sm text-muted-foreground">Duration:</span>
           <span className="font-medium">{selectedDuration} night{selectedDuration !== 1 ? 's' : ''}</span>
         </div>
+        {/* Discount preview for non-subscribers */}
         {currentTier.multiplier !== 1 && (
           <div className="flex justify-between items-center text-green-600">
             <span className="text-sm">Discount:</span>
             <span className="font-medium">{((1 - currentTier.multiplier) * 100).toFixed(0)}% off</span>
+          </div>
+        )}
+        {/* Show locked package total for non-subscribers */}
+        {currentTier.multiplier !== 1 && !canSeeDiscount && (
+          <div className="flex justify-between items-center text-gray-500">
+            <span className="text-sm">With subscription:</span>
+            <span className="font-medium">R{packageTotal.toFixed(2)} <span className="ml-2 text-xs">(Login & subscribe to unlock)</span></span>
           </div>
         )}
       </div>
@@ -171,7 +197,7 @@ export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate 
         <div className="flex justify-between items-center">
           <span className="text-lg font-medium">Total:</span>
           <span className="text-2xl font-bold">
-            R{typeof totalPrice === 'number' && !isNaN(totalPrice) ? totalPrice.toFixed(2) : '0.00'}
+            {canSeeDiscount ? `R${packageTotal.toFixed(2)}` : `R${baseTotal.toFixed(2)}`}
           </span>
         </div>
       </div>
@@ -182,7 +208,7 @@ export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate 
         disabled={!startDate || !endDate}
         onClick={() => {
           // Navigate to join page with parameters
-          window.location.href = `/estimate?total=${totalPrice}&duration=${selectedDuration}&postId=${postId}`
+          window.location.href = `/estimate?total=${canSeeDiscount ? packageTotal : baseTotal}&duration=${selectedDuration}&postId=${postId}`
         }}
       >
         {!startDate || !endDate ? 'Select dates to book' : 'Request Availability'}
