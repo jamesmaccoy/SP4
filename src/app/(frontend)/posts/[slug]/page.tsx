@@ -62,8 +62,11 @@ export default async function Post({ params: paramsPromise }: Args) {
 
       <div className="flex flex-col items-center gap-4 pt-8">
         <div className="container">
-        <StayDuration postId={slug} blockType="stayDuration" baseRate={typeof post.baseRate === 'number' ? post.baseRate : 0} />
+        
           <RichText className="max-w-[48rem] mx-auto" data={post.content} enableGutter={false} />
+          
+          <StayDuration postId={slug} blockType="stayDuration" baseRate={typeof post.baseRate === 'number' ? post.baseRate : 0} />
+
           {post.relatedPosts && post.relatedPosts.length > 0 && (
             <RelatedPosts
               className="mt-12 max-w-[52rem] lg:grid lg:grid-cols-subgrid col-start-1 col-span-3 grid-rows-[2fr]"

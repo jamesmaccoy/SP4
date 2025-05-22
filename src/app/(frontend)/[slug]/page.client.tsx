@@ -94,9 +94,11 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
     return (
       <article className="pt-16 pb-24">
         {draft && <LivePreviewListener />}
-        <RenderHero {...hero} />
-        <RenderBlocks blocks={layout} />
+
         
+        
+        
+        { /* Pro entitlement for revenuecat */}
         <div className="container mt-8 flex flex-col items-center space-y-4">
           {/* Date Picker for Stay Length */}
           <div className="flex flex-col space-y-2 w-full max-w-md">
@@ -199,6 +201,11 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
             Request Availability
           </Button>
         </div>
+
+
+        {/* Render hero and blocks */}
+        <RenderHero {...hero} />
+        <RenderBlocks blocks={layout} />
       </article>
     )
   }
