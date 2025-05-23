@@ -160,7 +160,7 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
           <Button
             variant="default"
             className="px-4 py-2"
-            onClick={() => {
+            onClick={async () => {
               // Get rate from the page content
               let rate = '150' // Default rate
               const rateElement = document.querySelector('[data-rate], h1, h2, h3, [class*="per-night"], [class*="perNight"]')
@@ -182,20 +182,28 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
                 }
               }
 
-              console.log('Post page - Page data:', {
-                id: page?.id,
-                title: page?.title,
-                slug: page?.slug
-              })
-
               // Use the post's ID from the URL slug
               const postId = window.location.pathname.split('/').pop()
-              console.log('Using post ID from URL:', postId)
 
-              const estimateUrl = `/estimate?total=${rate}&duration=${duration}&postId=${postId || ''}`
-              console.log('Navigating to estimate page:', estimateUrl)
-              
-              router.push(estimateUrl)
+              // POST to the API
+              const res = await fetch('/api/estimates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  postId,
+                  fromDate: startDate,
+                  toDate: endDate,
+                  guests: [], // or your guests data
+                  total: Number(rate) * Number(duration),
+                  customer: currentUser?.id,
+                }),
+              });
+              if (res.ok) {
+                const estimate = await res.json();
+                router.push(`/estimate/${estimate.id}`);
+              } else {
+                alert('Failed to create estimate');
+              }
             }}
           >
             Request Availability

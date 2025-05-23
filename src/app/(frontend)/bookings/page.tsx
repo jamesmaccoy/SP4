@@ -9,7 +9,23 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { getPayload } from 'payload'
+import { Estimate } from '@/payload-types'
+// import { fetchLatestEstimate } from '@/utilities/fetchLatestEstimate'
 // import { BookingsList } from './BookingsList'
+
+const fetchLatestEstimate = async (userId: string) => {
+  const payload = await getPayload({ config: configPromise });
+  const estimates = await payload.find({
+    collection: 'estimates',
+    where: {
+      customer: { equals: userId },
+    },
+    sort: '-createdAt',
+    limit: 1,
+    depth: 2,
+  });
+  return estimates.docs[0] || null;
+};
 
 export default async function Bookings() {
   const { user } = await getMeUser()
@@ -40,15 +56,18 @@ export default async function Bookings() {
   }))
 
   console.log(upcomingBookings, pastBookings)
+  const latestEstimate = await fetchLatestEstimate(user.id)
 
   return (
     <>
       <PageClient />
       <div className="my-10 container space-y-10">
         <div className="flex justify-end mb-6">
-          <Link href="/estimate">
-            <Button variant="default">Estimate</Button>
-          </Link>
+          {latestEstimate && (
+            <Link href={`/estimate/${latestEstimate.id}`}>
+              <Button variant="default">View your last estimate</Button>
+            </Link>
+          )}
         </div>
 
         {upcomingBookings.docs.length === 0 && pastBookings.docs.length === 0 ? (

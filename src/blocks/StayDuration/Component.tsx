@@ -11,6 +11,7 @@ import type { SelectSingleEventHandler } from 'react-day-picker'
 import type { StayDurationBlock } from './types'
 import { useUserContext } from '@/context/UserContext'
 import { useSubscription } from '@/hooks/useSubscription'
+import { Estimate } from './collections/Estimates'
 
 export type StayDurationProps = StayDurationBlock & {
   className?: string
@@ -206,9 +207,26 @@ export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate 
       <Button 
         className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
         disabled={!startDate || !endDate}
-        onClick={() => {
-          // Navigate to join page with parameters
-          window.location.href = `/estimate?total=${canSeeDiscount ? packageTotal : baseTotal}&duration=${selectedDuration}&postId=${postId}`
+        onClick={async () => {
+          if (!startDate || !endDate) return;
+          const res = await fetch('/api/estimates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              postId,
+              fromDate: startDate,
+              toDate: endDate,
+              guests: [], // or your guests data
+              total: canSeeDiscount ? packageTotal : baseTotal,
+              customer: currentUser?.id,
+            }),
+          });
+          if (res.ok) {
+            const estimate = await res.json();
+            window.location.href = `/estimate/${estimate.id}`;
+          } else {
+            alert('Failed to create estimate');
+          }
         }}
       >
         {!startDate || !endDate ? 'Select dates to book' : 'Request Availability'}

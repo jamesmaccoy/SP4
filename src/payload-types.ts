@@ -67,6 +67,7 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    estimates: Estimate;
     bookings: Booking;
     pages: Page;
     posts: Post;
@@ -83,6 +84,7 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
+    estimates: EstimatesSelect<false> | EstimatesSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
@@ -137,14 +139,15 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "bookings".
+ * via the `definition` "estimates".
  */
-export interface Booking {
+export interface Estimate {
   id: string;
   title: string;
   customer?: (string | null) | User;
-  token: string;
+  token?: string | null;
   guests?: (string | User)[] | null;
+  total: number;
   slug?: string | null;
   slugLock?: boolean | null;
   post: string | Post;
@@ -332,6 +335,25 @@ export interface Category {
         id?: string | null;
       }[]
     | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bookings".
+ */
+export interface Booking {
+  id: string;
+  title: string;
+  customer?: (string | null) | User;
+  token: string;
+  guests?: (string | User)[] | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  post: string | Post;
+  paymentStatus?: ('paid' | 'unpaid') | null;
+  fromDate: string;
+  toDate: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -839,6 +861,10 @@ export interface PayloadLockedDocument {
   id: string;
   document?:
     | ({
+        relationTo: 'estimates';
+        value: string | Estimate;
+      } | null)
+    | ({
         relationTo: 'bookings';
         value: string | Booking;
       } | null)
@@ -919,6 +945,25 @@ export interface PayloadMigration {
   batch?: number | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "estimates_select".
+ */
+export interface EstimatesSelect<T extends boolean = true> {
+  title?: T;
+  customer?: T;
+  token?: T;
+  guests?: T;
+  total?: T;
+  slug?: T;
+  slugLock?: T;
+  post?: T;
+  paymentStatus?: T;
+  fromDate?: T;
+  toDate?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
