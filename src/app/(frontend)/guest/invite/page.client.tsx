@@ -9,7 +9,6 @@ import {
   CardFooter,
   Card,
 } from '@/components/ui/card'
-import { Booking } from '@/payload-types'
 import { formatDateTime } from '@/utilities/formatDateTime'
 
 import { CheckIcon, CircleAlert, Loader2Icon } from 'lucide-react'
@@ -18,47 +17,63 @@ import { notFound, useRouter } from 'next/navigation'
 import React from 'react'
 
 type Props = {
-  booking: Pick<Booking, 'post' | 'fromDate' | 'createdAt' | 'customer'>
+  booking?: Pick<import('@/payload-types').Booking, 'post' | 'fromDate' | 'createdAt' | 'customer'>
+  estimate?: Pick<import('@/payload-types').Estimate, 'post' | 'fromDate' | 'createdAt' | 'customer'>
   tokenPayload: Record<string, string>
   token: string
 }
 
-export default function InviteClientPage({ booking, tokenPayload, token }: Props) {
+export default function InviteClientPage({ booking, estimate, tokenPayload, token }: Props) {
+  const isBooking = !!booking
+  const isEstimate = !!estimate
+  const data = booking || estimate
+
   if (
-    typeof booking.post === 'string' ||
-    typeof booking.customer === 'string' ||
-    !('bookingId' in tokenPayload)
+    !data ||
+    typeof data.post === 'string' ||
+    typeof data.customer === 'string' ||
+    (!('id' in tokenPayload))
   ) {
     notFound()
   }
 
   const router = useRouter()
-
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
   const handleInviteAccept = async () => {
     try {
       setIsLoading(true)
-      const res = await fetch(`/api/bookings/${tokenPayload.bookingId}/accept-invite/${token}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
+      let res
+      if (isBooking) {
+        res = await fetch(`/api/bookings/${tokenPayload.id}/accept-invite/${token}`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+      } else if (isEstimate) {
+        res = await fetch(`/api/estimates/${tokenPayload.id}/accept-invite/${token}`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+      }
       const data = await res.json()
-
       if (!res.ok) {
-        console.error('Error accepting invite:', res.statusText)
         setError(data.message || 'Unknown error')
         return
       }
-
-      router.push(`/bookings/${tokenPayload.bookingId}`)
+      if (isBooking) {
+        router.push(`/bookings/${tokenPayload.id}`)
+      } else if (isEstimate) {
+        router.push(`/estimate/${tokenPayload.id}`)
+      }
     } catch (err) {
-      console.error('Error accepting invite:', err)
+      setError('Error accepting invite')
     } finally {
       setIsLoading(false)
     }
@@ -86,17 +101,16 @@ export default function InviteClientPage({ booking, tokenPayload, token }: Props
       <Card>
         <CardHeader>
           <CardTitle>
-            Join <strong>{booking.post.title}</strong> as a guest
+            Join <strong>{data.post.title}</strong> as a guest
           </CardTitle>
           <CardDescription>
-            You have been invited by <strong>{booking.customer?.name}</strong> to join them on this
-            booking.
+            You have been invited by <strong>{data.customer?.name}</strong> to join them on this {isBooking ? 'booking' : 'estimate'}.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-start gap-10">
-            <p className="text-lg font-medium">Date Booked: {formatDateTime(booking.createdAt)}</p>
-            <p className="text-lg font-medium">Arrival Date: {formatDateTime(booking.fromDate)}</p>
+            <p className="text-lg font-medium">Date {isBooking ? 'Booked' : 'Estimated'}: {formatDateTime(data.createdAt)}</p>
+            <p className="text-lg font-medium">Arrival Date: {formatDateTime(data.fromDate)}</p>
           </div>
         </CardContent>
         <CardFooter>

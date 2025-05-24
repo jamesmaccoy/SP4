@@ -180,15 +180,25 @@ export default async function GuestInvite({ searchParams }: { searchParams: Sear
     )
   }
 
-  const booking = await fetchBookingDetails(tokenData.bookingId, token)
+  let details = null
+  if (tokenData.type === 'booking') {
+    details = await fetchBookingDetails(tokenData.id, token)
+  } else if (tokenData.type === 'estimate') {
+    details = await fetchEstimateDetails(tokenData.id, token)
+  }
 
-  if (!booking) {
+  if (!details) {
     notFound()
   }
 
   return (
     <div className="mx-4">
-      <InviteClientPage booking={booking} tokenPayload={tokenData} token={token} />
+      <InviteClientPage
+        booking={tokenData.type === 'booking' ? details : undefined}
+        estimate={tokenData.type === 'estimate' ? details : undefined}
+        tokenPayload={tokenData}
+        token={token}
+      />
     </div>
   )
 }
@@ -196,6 +206,7 @@ export default async function GuestInvite({ searchParams }: { searchParams: Sear
 const fetchTokenData = async (token: string) => {
   const payload = await getPayload({ config: configPromise })
   
+  // Try bookings first
   try {
     const response = await payload.find({
       collection: 'bookings',
@@ -207,25 +218,45 @@ const fetchTokenData = async (token: string) => {
       limit: 1,
     })
 
-    if (response.docs.length === 0) {
-      return null
-    }
-
-    const booking = response.docs[0]
-    const customerId = typeof booking.customer === 'string' ? booking.customer : booking.customer?.id
-    
-    if (!customerId) {
-      return null
-    }
-
-    return {
-      bookingId: booking.id,
-      customerId,
+    if (response.docs.length > 0) {
+      const booking = response.docs[0]
+      const customerId = typeof booking.customer === 'string' ? booking.customer : booking.customer?.id
+      if (!customerId) return null
+      return {
+        type: 'booking',
+        id: booking.id,
+        customerId,
+      }
     }
   } catch (error) {
-    console.error('Error fetching token data:', error)
-    return null
+    // continue to try estimate
   }
+
+  // Try estimates
+  try {
+    const response = await payload.find({
+      collection: 'estimates',
+      where: {
+        token: {
+          equals: token,
+        },
+      },
+      limit: 1,
+    })
+    if (response.docs.length > 0) {
+      const estimate = response.docs[0]
+      const customerId = typeof estimate.customer === 'string' ? estimate.customer : estimate.customer?.id
+      if (!customerId) return null
+      return {
+        type: 'estimate',
+        id: estimate.id,
+        customerId,
+      }
+    }
+  } catch (error) {
+    // fall through
+  }
+  return null
 }
 
 const fetchBookingDetails = async (bookingId: string, token: string) => {
@@ -263,4 +294,41 @@ const fetchBookingDetails = async (bookingId: string, token: string) => {
   }
 
   return booking.docs[0]
+}
+
+const fetchEstimateDetails = async (estimateId: string, token: string) => {
+  const payload = await getPayload({ config: configPromise })
+
+  const estimate = await payload.find({
+    collection: 'estimates',
+    where: {
+      and: [
+        {
+          id: {
+            equals: estimateId,
+          },
+        },
+        {
+          token: {
+            equals: token,
+          },
+        },
+      ],
+    },
+    select: {
+      post: true,
+      customer: true,
+      fromDate: true,
+      toDate: true,
+      createdAt: true,
+    },
+    limit: 1,
+    depth: 1,
+  })
+
+  if (estimate.docs.length === 0) {
+    return null
+  }
+
+  return estimate.docs[0]
 }

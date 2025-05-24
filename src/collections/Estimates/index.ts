@@ -114,7 +114,110 @@ export const Estimate: CollectionConfig = {
         }
       },
     },
-    // ... (repeat for all endpoints, replacing 'booking' with 'estimate', 'bookings' with 'estimates', and so on)
+    // This endpoint is used to accept the invite for the estimate
+    // and add the user to the guests list
+    {
+      path: '/:estimateId/accept-invite/:token',
+      method: 'post',
+      handler: async (req) => {
+        if (!req.user) {
+          return Response.json(
+            {
+              message: 'Unauthorized',
+            },
+            { status: 401 },
+          )
+        }
+
+        const estimateId =
+          req.routeParams && 'estimateId' in req.routeParams && req.routeParams.estimateId
+
+        if (!estimateId || typeof estimateId !== 'string') {
+          return Response.json(
+            {
+              message: 'Estimate ID not provided',
+            },
+            { status: 400 },
+          )
+        }
+
+        const token = req.routeParams && 'token' in req.routeParams && req.routeParams.token
+
+        if (!token || typeof token !== 'string') {
+          return Response.json(
+            {
+              message: 'Token not provided',
+            },
+            { status: 400 },
+          )
+        }
+
+        const estimates = await req.payload.find({
+          collection: 'estimates',
+          where: {
+            and: [
+              {
+                id: {
+                  equals: estimateId,
+                },
+              },
+              {
+                token: {
+                  equals: token,
+                },
+              },
+            ],
+          },
+          limit: 1,
+          pagination: false,
+        })
+
+        if (estimates.docs.length === 0) {
+          return Response.json(
+            {
+              message: 'Estimate not found',
+            },
+            { status: 404 },
+          )
+        }
+
+        const estimate = estimates.docs[0]
+
+        if (!estimate) {
+          return Response.json(
+            {
+              message: 'Estimate not found',
+            },
+            { status: 404 },
+          )
+        }
+
+        if (
+          estimate.guests?.some((guest) =>
+            typeof guest === 'string' ? guest === req.user?.id : guest.id === req.user?.id,
+          ) ||
+          (typeof estimate.customer === 'string'
+            ? estimate.customer === req.user.id
+            : estimate.customer?.id === req.user.id)
+        ) {
+          return Response.json({
+            message: 'User already in estimate',
+          })
+        }
+
+        await req.payload.update({
+          collection: 'estimates',
+          id: estimateId,
+          data: {
+            guests: [...(estimate.guests || []), req.user.id],
+          },
+        })
+
+        return Response.json({
+          message: 'Estimate updated',
+        })
+      },
+    },
   ],
   access: {
     create: ({ req: { user } }) => {
