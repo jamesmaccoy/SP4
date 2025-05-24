@@ -54,12 +54,16 @@ export const PostHero: React.FC<{
               </div>
             )}
             <Button asChild variant="secondary" className="flex flex-col gap-1 justify-center items-start min-w-[120px]">
-              <a href={`https://www.simpleplek.co.za/${post?.slug}`} target="_blank" rel="noopener noreferrer">
+              <a href="#book-now">
                 
                 {typeof post.baseRate === 'number' && (
                   <span>From R{(post.baseRate * 0.7).toFixed(2)}/night</span>
                 )}
               </a>
+            </Button>
+            <Button asChild variant="outline" className="flex flex-col gap-1 justify-center items-start min-w-[120px] text-muted-foreground">
+              <a href={`https://www.simpleplek.co.za/${post?.slug}`} rel="noopener noreferrer">Trip planner</a>
+              
             </Button>
           </div>
         </div>

@@ -43,15 +43,19 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
     }
   }
 
-  const booking = await fetchBookingDetails(tokenData.bookingId, token)
-  if (!booking || !booking.post) {
+  let details: (Awaited<ReturnType<typeof fetchBookingDetails>> | Awaited<ReturnType<typeof fetchEstimateDetails>>) = null;
+  if (tokenData.type === 'booking') {
+    details = await fetchBookingDetails(tokenData.id, token)
+  } else if (tokenData.type === 'estimate') {
+    details = await fetchEstimateDetails(tokenData.id, token)
+  }
+  if (!details || !details.post) {
     return {
       title: 'You have been invited as a guest by a customer of Simple Plek',
       description: 'Register and accept your guest invite to be permitted on the property',
     }
   }
-
-  const post = typeof booking.post === 'string' ? null : booking.post
+  const post = typeof details.post === 'string' ? null : details.post
   const serverUrl = getServerSideURL()
   
   let postImage: string | null = null
@@ -180,7 +184,7 @@ export default async function GuestInvite({ searchParams }: { searchParams: Sear
     )
   }
 
-  let details = null
+  let details: (Awaited<ReturnType<typeof fetchBookingDetails>> | Awaited<ReturnType<typeof fetchEstimateDetails>>) = null;
   if (tokenData.type === 'booking') {
     details = await fetchBookingDetails(tokenData.id, token)
   } else if (tokenData.type === 'estimate') {

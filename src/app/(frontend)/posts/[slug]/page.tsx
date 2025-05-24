@@ -64,7 +64,7 @@ export default async function Post({ params: paramsPromise }: Args) {
         <div className="container">
         
           <RichText className="max-w-[48rem] mx-auto" data={post.content} enableGutter={false} />
-          
+          <div id="book-now" />
           <StayDuration postId={slug} blockType="stayDuration" baseRate={typeof post.baseRate === 'number' ? post.baseRate : 0} />
 
           {post.relatedPosts && post.relatedPosts.length > 0 && (
@@ -76,6 +76,7 @@ export default async function Post({ params: paramsPromise }: Args) {
          
         </div>
       </div>
+     
     </article>
   )
 }

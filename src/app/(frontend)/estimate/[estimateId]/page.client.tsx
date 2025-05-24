@@ -160,7 +160,7 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
   const packageDetails = {
     per_night: {
       ...packageTiers[0],
-      revenueCatId: "per_night"
+      revenueCatId: "pn"
     },
     per_night_luxury: {
       ...packageTiers[0],
