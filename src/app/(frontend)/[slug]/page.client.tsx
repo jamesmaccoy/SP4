@@ -13,7 +13,7 @@ import { PayloadRedirects } from '@/components/PayloadRedirects'
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
-import { CalendarIcon, Wine, BedDouble } from "lucide-react"
+import { CalendarIcon, Wine, BedDouble, Mountain } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -27,11 +27,22 @@ export interface PageClientProps {
 }
 
 // Refactor: Only render one PackageBlock, which manages its own tab state and renders the tabs inside itself
-const PackageBlock = ({ currentUser, router, baseRate = 150 }) => {
+const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
   const [selectedTab, setSelectedTab] = useState('standard')
   const [startDate, setStartDate] = useState<Date | null>(new Date())
   const [endDate, setEndDate] = useState<Date | null>(new Date(new Date().setDate(new Date().getDate() + 5)))
   const [loading, setLoading] = useState(false)
+  const [hikeImage, setHikeImage] = useState<string | null>(null)
+
+  const postId = typeof window !== 'undefined' ? window.location.pathname.split('/').pop() : ''
+
+  useEffect(() => {
+    if (selectedTab === 'hiking' && postId) {
+      // Example: fetch image from /posts/{postId} (simulate with static image for now)
+      // Replace this with a real fetch if you have an API
+      setHikeImage('https://llandudnoshack.co.za/images/Gallery-shack.jpg')
+    }
+  }, [selectedTab, postId])
 
   const packages = {
     standard: {
@@ -43,9 +54,14 @@ const PackageBlock = ({ currentUser, router, baseRate = 150 }) => {
       title: "Wine Experience",
       features: ["Standard accommodation", "Wine tasting experience", "Curated wine selection", "Sommelier consultation"],
       rate: baseRate * 1.5
+    },
+    hiking: {
+      title: "Hiking Package",
+      features: ["Standard accommodation", "Guided hike included", "Trail snacks", "Nature immersion"],
+      rate: baseRate * 1.2
     }
   }
-  const pkg = packages[selectedTab]
+  const pkg = packages[selectedTab] || packages["standard"]
 
   // Calculate duration
   let duration = 5
@@ -58,31 +74,6 @@ const PackageBlock = ({ currentUser, router, baseRate = 150 }) => {
 
   return (
     <div className="block bg-card shadow p-6 flex flex-col items-left">
-      <div className="flex flex-col space-y-4 w-full max-w-md">
-        <h3 className="text-lg font-semibold">{pkg.title}</h3>
-        <div className="space-y-2">
-          {pkg.features.map((feature, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-primary" />
-              <span className="text-sm text-muted-foreground">{feature}</span>
-            </div>
-          ))}
-        </div>
-        <div className="pt-4 border-t border-border">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Rate:</span>
-            <span className="font-medium">R{pkg.rate}/night</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Duration:</span>
-            <span className="font-medium">{duration} night{duration !== 1 ? 's' : ''}</span>
-          </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-lg font-medium">Total:</span>
-            <span className="text-2xl font-bold">R{total.toFixed(2)}</span>
-          </div>
-        </div>
-      </div>
       {/* Tabs and button on the same row */}
       <div className="flex flex-row items-center justify-between mb-8 gap-4 w-full max-w-md">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="flex-1">
@@ -92,6 +83,9 @@ const PackageBlock = ({ currentUser, router, baseRate = 150 }) => {
             </TabsTrigger>
             <TabsTrigger value="wine" className="px-3 py-2 text-base font-medium rounded-full data-[state=active]:bg-secondary data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground transition-colors shadow-none flex items-center justify-center">
               <Wine className="h-5 w-5" />
+            </TabsTrigger>
+            <TabsTrigger value="hiking" className="px-3 py-2 text-base font-medium rounded-full data-[state=active]:bg-secondary data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground transition-colors shadow-none flex items-center justify-center">
+              <Mountain className="h-5 w-5" />
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -127,6 +121,10 @@ const PackageBlock = ({ currentUser, router, baseRate = 150 }) => {
           {loading ? 'Requesting...' : 'Request Availability'}
         </Button>
       </div>
+      {/* Show image for hiking package */}
+      {selectedTab === 'hiking' && hikeImage && (
+        <img src={hikeImage} alt="Hiking" className="rounded-lg mb-4 w-full max-w-md object-cover" />
+      )}
       {/* Stay Length Form */}
       <div className="flex flex-col space-y-2 w-full max-w-md mb-6">
         <label className="text-gray-700 font-medium">Stay Length</label>
@@ -180,25 +178,45 @@ const PackageBlock = ({ currentUser, router, baseRate = 150 }) => {
           </Popover>
         </div>
       </div>
-      <h3 className="text-xl font-semibold mb-2">{pkg.title}</h3>
-      <ul className="mb-4 list-disc pl-5 text-gray-700">
-        {pkg.features.map((f, i) => <li key={i}>{f}</li>)}
-        <li>
-          <span className="font-bold">Total:</span> R{total.toFixed(2)}
-        </li>
-        <li>
-          <span className="font-bold">Post ID:</span> {window.location.pathname.split('/').pop()}
-        </li>
-        <li>
-          <a
-            href={`/posts/${window.location.pathname.split('/').pop()}`}
-            className="text-primary underline"
-            rel="noopener noreferrer"
-          >
-            /posts/{window.location.pathname.split('/').pop()}
-          </a>
-        </li>
-      </ul>
+      {/* Package title, features, and image side by side */}
+      <div className="flex flex-col sm:flex-row sm:items-start gap-6 mb-4">
+        <div className="flex-1">
+          <h3 className="text-xl font-semibold mb-2">{pkg.title}</h3>
+          <ul className="list-disc pl-5 text-gray-700 mb-2">
+            {pkg.features.map((f, i) => <li key={i}>{f}</li>)}
+            <li>
+              <span className="font-bold">Total:</span> R{total.toFixed(2)}
+            </li>
+          </ul>
+        </div>
+        {/* Image floated right on desktop, below on mobile */}
+        <a
+          href={`/posts/${postId}`}
+          rel="noopener noreferrer"
+          className="group block flex-shrink-0"
+          tabIndex={-1}
+        >
+          <img
+            src={heroImage || 'https://llandudnoshack.co.za/images/Gallery-shack.jpg'}
+            alt="Preview"
+            className="w-60 h-30 rounded-xl object-cover border border-border transition-transform group-hover:scale-99 group-hover:ring-2 group-hover:ring-primary"
+          />
+        </a>
+      </div>
+      {/* Breadcrumb */}
+      <nav className="flex items-center space-x-2 text-sm mb-4 pl-5">
+        <span className="text-muted-foreground">Home</span>
+        <span className="text-muted-foreground">&gt;</span>
+        <span className="text-muted-foreground">Posts</span>
+        <span className="text-muted-foreground">&gt;</span>
+        <a
+          href={`/posts/${postId}`}
+          className="text-primary underline font-medium"
+          rel="noopener noreferrer"
+        >
+          {postId}
+        </a>
+      </nav>
     </div>
   )
 }
@@ -269,6 +287,13 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url, baseRate }) =
 
     const isCustomer = currentUser?.role?.includes('customer')
 
+    const heroImage =
+      typeof hero?.media === 'object' && hero.media?.url
+        ? hero.media.url
+        : typeof hero?.media === 'string'
+          ? `/media/${hero.media}` // fallback if only ID is present
+          : null;
+
     return (
       <article className="pt-16 pb-24">
         {draft && <LivePreviewListener />}
@@ -277,7 +302,7 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url, baseRate }) =
         <div className="container mt-8 flex flex-col items-center space-y-4">
           <div className="w-full max-w-2xl mt-8">
             {isCustomer && isSubscribed && entitlements.includes('pro') ? (
-              <PackageBlock currentUser={currentUser} router={router} baseRate={baseRate} />
+              <PackageBlock currentUser={currentUser} router={router} baseRate={baseRate} heroImage={heroImage} />
             ) : isSubscriptionLoading ? (
               <div className="text-center text-muted-foreground py-12">Checking subscription...</div>
             ) : (

@@ -16,6 +16,7 @@ import InviteUrlDialog from './_components/invite-url-dialog'
 import { Media } from '@/components/Media'
 import { formatDateTime } from '@/utilities/formatDateTime'
 import { UserIcon } from 'lucide-react'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 interface RevenueCatError extends Error {
   code?: ErrorCode;
@@ -449,229 +450,227 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
   }
 
   return (
-    
     <div className="container py-10">
+      <h1 className="text-4xl font-bold tracking-tighter mb-8">Estimate Details</h1>
+      <Tabs defaultValue="details" className="max-w-screen-lg mx-auto">
 
-
-       {/* --- Summary Header Section --- */}
-       <div className="pt-12 pb-6">
-        <div className="bg-muted p-6 rounded-lg border border-border mb-6 text-center">
-          <h2 className="text-3xl font-semibold mb-2">R{bookingTotal}</h2>
-          <p className="text-lg text-muted-foreground">Total for {bookingDuration} nights</p>
-        </div>
-      </div>
-
-
-      
-      {/* --- Estimate Info Section --- */}
-      {data && 'post' in data && typeof data?.post !== 'string' ? (
-        <div className="flex items-start flex-col md:flex-row gap-5 md:gap-10 mb-8">
-          <div className="md:max-w-[450px] w-full rounded-md overflow-hidden">
-            {!!data?.post.meta?.image && <Media resource={data?.post.meta?.image || undefined} />}
-          </div>
-          <div className="md:py-5 py-3">
-            <h1 className="text-4xl mb-3 font-bold">{data?.post.title}</h1>
-            <p className="text-lg font-medium">
-              Date Estimated: {formatDateTime(data?.createdAt)}
-            </p>
-            <p className="text-lg font-medium">Estimate Start: {formatDateTime(data?.fromDate)}</p>
-            <p className="text-lg font-medium">Estimate End: {formatDateTime(data?.toDate)}</p>
-          </div>
-        </div>
-      ) : (
-        <div className="mb-8">Error loading estimate details</div>
-      )}
-
-     
-
-      {/* --- Customer & Guests Section --- */}
-      <div className="mb-8 max-w-screen-md mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold">Guests</h2>
-          {data &&
-            'customer' in data &&
-            typeof data?.customer !== 'string' &&
-            data.customer?.id === user.id && (
-              <InviteUrlDialog
-                estimateId={data.id}
-                type="estimates"
-                trigger={
-                  <Button>
-                    <span>Invite Guest</span>
-                  </Button>
-                }
-              />
-            )}
-        </div>
-        <div className="mt-2 space-y-3">
-          <div className="shadow-sm p-2 border border-border rounded-lg flex items-center gap-2">
-            <div className="p-2 border border-border rounded-full">
-              <UserIcon className="size-6" />
-            </div>
-            <div>
-              <div>{typeof data.customer === 'string' ? 'Customer' : data.customer?.name}</div>
-              <div className="font-medium text-sm">Customer</div>
+          {/* --- Summary Header Section --- */}
+          <div className="pt-12 pb-6">
+            <div className="bg-muted p-6 rounded-lg border border-border mb-6 text-center">
+              <h2 className="text-3xl font-semibold mb-2">R{bookingTotal}</h2>
+              <p className="text-lg text-muted-foreground">Total for {bookingDuration} nights</p>
             </div>
           </div>
-          {guests.map((guest) => (
-            <div key={guest.id} className="shadow-sm p-2 border border-border rounded-lg flex items-center gap-2">
-              <div className="p-2 border border-border rounded-full">
-                <UserIcon className="size-6" />
+
+        <TabsList className="mb-6 bg-muted p-2 rounded-full flex flex-row gap-2">
+          <TabsTrigger value="details" className="px-3 py-2 rounded-full flex items-center gap-2 data-[state=active]:bg-secondary data-[state=active]:text-foreground">
+            Details
+          </TabsTrigger>
+          <TabsTrigger value="guests" className="px-3 py-2 rounded-full flex items-center gap-2 data-[state=active]:bg-secondary data-[state=active]:text-foreground">
+            Guests
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="details">
+
+
+          {/* --- Estimate Info Section --- */}
+          {data && 'post' in data && typeof data?.post !== 'string' ? (
+            <div className="flex items-start flex-col md:flex-row gap-5 md:gap-10 mb-8">
+              <div className="md:max-w-[450px] w-full rounded-md overflow-hidden">
+                {!!data?.post.meta?.image && <Media resource={data?.post.meta?.image || undefined} />}
               </div>
-              <div>
-                <div>{guest.name}</div>
-                <div className="font-medium text-sm">Guest</div>
+              <div className="md:py-5 py-3">
+                <h1 className="text-4xl mb-3 font-bold">{data?.post.title}</h1>
+                <p className="text-lg font-medium">
+                  Date Estimated: {formatDateTime(data?.createdAt)}
+                </p>
+                <p className="text-lg font-medium">Estimate Start: {formatDateTime(data?.fromDate)}</p>
+                <p className="text-lg font-medium">Estimate End: {formatDateTime(data?.toDate)}</p>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* --- Interactive Estimate UI Section --- */}
-      <h1 className="text-4xl font-bold tracking-tighter mb-8">Start your curated stay</h1>
-      {/* Payment Success Message */}
-      {paymentSuccess && (
-        <div className="mb-6 p-4 border border-green-200 bg-green-50 rounded-md">
-          <h3 className="text-green-800 font-semibold">Estimate Successful!</h3>
-          <p className="text-green-700">
-            Your estimate has been confirmed. Redirecting to confirmation page...
-          </p>
-        </div>
-      )}
-      {/* Payment Error Message */}
-      {paymentError && (
-        <div className="mb-6 p-4 border border-red-200 bg-red-50 rounded-md">
-          <h3 className="text-red-800 font-semibold">Estimate Error</h3>
-          <p className="text-red-700">
-            {paymentError}
-          </p>
-        </div>
-      )}
-      {/* Package Selection */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Your Selected Package</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Main Package */}
-          <Card className="border-2 border-primary bg-primary/5">
-            <CardHeader>
-              <CardTitle>
-                {selectedPackage ? packageDetails[selectedPackage]?.title : "Loading..."}
-              </CardTitle>
-              <CardDescription>
-                {selectedPackage ? packageDetails[selectedPackage]?.description : ""}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {selectedPackage && packageDetails[selectedPackage]?.features.map((feature, index) => (
-                  <li key={index} className="flex items-center text-sm">
-                    <Check className="mr-2 h-4 w-4 text-primary" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <span className="text-2xl font-bold">
-                {formatPrice(packagePrice)}/night
-              </span>
-            </CardFooter>
-          </Card>
-          {/* Wine Package Add-on */}
-          <Card 
-            className={cn(
-              "border-2 border-border shadow-lg transition-all cursor-pointer",
-              isWineSelected ? "border-primary bg-primary/5" : "hover:border-primary/50"
-            )}
-            onClick={() => setIsWineSelected(!isWineSelected)}
-          >
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle>{packageDetails.wine.title}</CardTitle>
-                  <CardDescription>{packageDetails.wine.description}</CardDescription>
-                </div>
-                <Switch
-                  id="wine-package"
-                  checked={isWineSelected}
-                  onCheckedChange={(checked) => {
-                    setIsWineSelected(checked)
-                  }}
-                  onClick={(e) => e.stopPropagation()} // Prevent card click when clicking switch
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {packageDetails.wine.features.map((feature, index) => (
-                  <li key={index} className="flex items-center text-sm">
-                    <Check className="mr-2 h-4 w-4 text-primary" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-      {/* Estimate Summary */}
-      <div className="mb-8 bg-muted p-6 rounded-lg border border-border">
-        <h2 className="text-2xl font-semibold mb-4">Estimate Summary</h2>
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-muted-foreground">Package:</span>
-          <span className="font-medium">
-            {selectedPackage ? packageDetails[selectedPackage]?.title : "Not selected"}
-          </span>
-        </div>
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-muted-foreground">Rate per night:</span>
-          <span className="font-medium">
-            {formatPrice(packagePrice)}
-          </span>
-        </div>
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-muted-foreground">Duration:</span>
-          <span className="font-medium">{selectedDuration} nights</span>
-        </div>
-        <div className="flex justify-between items-center mb-6">
-          <span className="text-muted-foreground">Total:</span>
-          <span className="text-2xl font-bold">
-            {formatPrice(bookingTotal)}
-          </span>
-        </div>
-        {/* Complete Estimate Button */}
-        <Button
-          onClick={handleEstimate}
-          className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-          disabled={paymentLoading || paymentSuccess || !postId || !selectedPackage}
-        >
-          {paymentLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : paymentSuccess ? (
-            "Estimate Confirmed!"
-          ) : !postId ? (
-            "Missing Property Information"
-          ) : !selectedPackage ? (
-            "Please Select a Package"
           ) : (
-            `Complete Estimate - ${formatPrice(bookingTotal)}`
+            <div className="mb-8">Error loading estimate details</div>
           )}
-        </Button>
-        {!postId && (
-          <p className="text-red-500 text-sm mt-2">
-            Property information is missing. Please start from the property page.
-          </p>
-        )}
-        {!selectedPackage && (
-          <p className="text-red-500 text-sm mt-2">
-            Please select a package to continue.
-          </p>
-        )}
-      </div>
-   
+
+          {/* --- Package Selection --- */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold mb-4">Your Selected Package</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Main Package */}
+              <Card className="border-2 border-primary bg-primary/5">
+                <CardHeader>
+                  <CardTitle>
+                    {selectedPackage ? packageDetails[selectedPackage]?.title : "Loading..."}
+                  </CardTitle>
+                  <CardDescription>
+                    {selectedPackage ? packageDetails[selectedPackage]?.description : ""}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {selectedPackage && packageDetails[selectedPackage]?.features.map((feature, index) => (
+                      <li key={index} className="flex items-center text-sm">
+                        <Check className="mr-2 h-4 w-4 text-primary" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+                <CardFooter>
+                  <span className="text-2xl font-bold">
+                    {formatPrice(packagePrice)}/night
+                  </span>
+                </CardFooter>
+              </Card>
+              {/* Wine Package Add-on */}
+              <Card 
+                className={cn(
+                  "border-2 border-border shadow-lg transition-all cursor-pointer",
+                  isWineSelected ? "border-primary bg-primary/5" : "hover:border-primary/50"
+                )}
+                onClick={() => setIsWineSelected(!isWineSelected)}
+              >
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle>{packageDetails.wine.title}</CardTitle>
+                      <CardDescription>{packageDetails.wine.description}</CardDescription>
+                    </div>
+                    <Switch
+                      id="wine-package"
+                      checked={isWineSelected}
+                      onCheckedChange={(checked) => {
+                        setIsWineSelected(checked)
+                      }}
+                      onClick={(e) => e.stopPropagation()} // Prevent card click when clicking switch
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {packageDetails.wine.features.map((feature, index) => (
+                      <li key={index} className="flex items-center text-sm">
+                        <Check className="mr-2 h-4 w-4 text-primary" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+          
+        
+        </TabsContent>
+
+
+
+
+
+
+        <TabsContent value="guests">
+          {/* --- Customer & Guests Section --- */}
+          <div className="mb-8 max-w-screen-md mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold">Guests</h2>
+              {data &&
+                'customer' in data &&
+                typeof data?.customer !== 'string' &&
+                data.customer?.id === user.id && (
+                  <InviteUrlDialog
+                    estimateId={data.id}
+                    type="estimates"
+                    trigger={
+                      <Button>
+                        <span>Invite Guest</span>
+                      </Button>
+                    }
+                  />
+                )}
+            </div>
+            <div className="mt-2 space-y-3">
+              <div className="shadow-sm p-2 border border-border rounded-lg flex items-center gap-2">
+                <div className="p-2 border border-border rounded-full">
+                  <UserIcon className="size-6" />
+                </div>
+                <div>
+                  <div>{typeof data.customer === 'string' ? 'Customer' : data.customer?.name}</div>
+                  <div className="font-medium text-sm">Customer</div>
+                </div>
+              </div>
+              {guests.map((guest) => (
+                <div key={guest.id} className="shadow-sm p-2 border border-border rounded-lg flex items-center gap-2">
+                  <div className="p-2 border border-border rounded-full">
+                    <UserIcon className="size-6" />
+                  </div>
+                  <div>
+                    <div>{guest.name}</div>
+                    <div className="font-medium text-sm">Guest</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+        {/* --- Booking Summary --- */}
+        <div className="mb-8 bg-muted p-6 rounded-lg border border-border">
+            <h2 className="text-2xl font-semibold mb-4">Estimate Summary</h2>
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-muted-foreground">Package:</span>
+              <span className="font-medium">
+                {selectedPackage ? packageDetails[selectedPackage]?.title : "Not selected"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-muted-foreground">Rate per night:</span>
+              <span className="font-medium">
+                {formatPrice(packagePrice)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-muted-foreground">Duration:</span>
+              <span className="font-medium">{selectedDuration} nights</span>
+            </div>
+            <div className="flex justify-between items-center mb-6">
+              <span className="text-muted-foreground">Total:</span>
+              <span className="text-2xl font-bold">
+                {formatPrice(bookingTotal)}
+              </span>
+            </div>
+            {/* Complete Estimate Button */}
+            <Button
+              onClick={handleEstimate}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={paymentLoading || paymentSuccess || !postId || !selectedPackage}
+            >
+              {paymentLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : paymentSuccess ? (
+                "Estimate Confirmed!"
+              ) : !postId ? (
+                "Missing Property Information"
+              ) : !selectedPackage ? (
+                "Please Select a Package"
+              ) : (
+                `Complete Estimate - ${formatPrice(bookingTotal)}`
+              )}
+            </Button>
+            {!postId && (
+              <p className="text-red-500 text-sm mt-2">
+                Property information is missing. Please start from the property page.
+              </p>
+            )}
+            {!selectedPackage && (
+              <p className="text-red-500 text-sm mt-2">
+                Please select a package to continue.
+              </p>
+            )}
+          </div>
     </div>
   )
 } 
