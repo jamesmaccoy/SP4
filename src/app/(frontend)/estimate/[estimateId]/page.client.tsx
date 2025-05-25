@@ -369,6 +369,11 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
           postId: postId,
           fromDate: fromDate.toISOString(),
           toDate: toDate.toISOString(),
+          guests: [],
+          baseRate: packagePrice,
+          duration: selectedDuration,
+          customer: user.id,
+          packageType: selectedPackage,
         }
         const response = await fetch(`/api/estimates/${data.id}/confirm`, {
           method: 'POST',
@@ -630,7 +635,7 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
         <div className="flex justify-between items-center mb-6">
           <span className="text-muted-foreground">Total:</span>
           <span className="text-2xl font-bold">
-            {formatPrice(calculateTotalPrice())}
+            {formatPrice(bookingTotal)}
           </span>
         </div>
         {/* Complete Estimate Button */}
@@ -651,7 +656,7 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
           ) : !selectedPackage ? (
             "Please Select a Package"
           ) : (
-            `Complete Estimate - ${formatPrice(calculateTotalPrice())}`
+            `Complete Estimate - ${formatPrice(bookingTotal)}`
           )}
         </Button>
         {!postId && (

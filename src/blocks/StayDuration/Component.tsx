@@ -12,6 +12,7 @@ import type { StayDurationBlock } from './types'
 import { useUserContext } from '@/context/UserContext'
 import { useSubscription } from '@/hooks/useSubscription'
 import { Estimate } from './collections/Estimates'
+import { calculateTotal } from '@/lib/calculateTotal'
 
 export type StayDurationProps = StayDurationBlock & {
   className?: string
@@ -77,8 +78,8 @@ export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate 
   const { isSubscribed } = useSubscription()
   const isCustomer = currentUser?.role?.includes('customer')
   const canSeeDiscount = isCustomer && isSubscribed
-  const packageTotal = effectiveBaseRate * selectedDuration * currentTier.multiplier
-  const baseTotal = effectiveBaseRate * selectedDuration
+  const packageTotal = calculateTotal(effectiveBaseRate, selectedDuration, currentTier.multiplier)
+  const baseTotal = calculateTotal(effectiveBaseRate, selectedDuration, 1)
 
   useEffect(() => {
     if (startDate && endDate) {
@@ -92,7 +93,7 @@ export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate 
 
       setSelectedDuration(diffDays)
       setCurrentTier(tier)
-      setTotalPrice(effectiveBaseRate * diffDays * tier.multiplier)
+      setTotalPrice(calculateTotal(effectiveBaseRate, diffDays, tier.multiplier))
     }
   }, [startDate, endDate, effectiveBaseRate])
 

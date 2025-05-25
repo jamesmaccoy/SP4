@@ -13,19 +13,21 @@ import { PayloadRedirects } from '@/components/PayloadRedirects'
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, Wine, BedDouble } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { calculateTotal } from '@/lib/calculateTotal'
 
-interface PageClientProps {
+export interface PageClientProps {
   page: PageType | null
   draft: boolean
   url: string
+  baseRate?: number
 }
 
 // Refactor: Only render one PackageBlock, which manages its own tab state and renders the tabs inside itself
-const PackageBlock = ({ currentUser, router }) => {
+const PackageBlock = ({ currentUser, router, baseRate = 150 }) => {
   const [selectedTab, setSelectedTab] = useState('standard')
   const [startDate, setStartDate] = useState<Date | null>(new Date())
   const [endDate, setEndDate] = useState<Date | null>(new Date(new Date().setDate(new Date().getDate() + 5)))
@@ -35,12 +37,12 @@ const PackageBlock = ({ currentUser, router }) => {
     standard: {
       title: "Standard Package",
       features: ["Standard accommodation", "Basic amenities", "Self-service"],
-      rate: 150
+      rate: baseRate
     },
     wine: {
       title: "Wine Experience",
       features: ["Standard accommodation", "Wine tasting experience", "Curated wine selection", "Sommelier consultation"],
-      rate: 225
+      rate: baseRate * 1.5
     }
   }
   const pkg = packages[selectedTab]
@@ -52,17 +54,54 @@ const PackageBlock = ({ currentUser, router }) => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     if (diffDays > 0) duration = diffDays
   }
-  const total = pkg.rate * duration
+  const total = calculateTotal(pkg.rate, duration, 1)
 
   return (
     <div className="block bg-card shadow p-6 flex flex-col items-left">
-      {/* Tabs at the top, hugging content width */}
-      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-8">
-        <TabsList className="bg-muted p-8 justify-center">
-          <TabsTrigger value="standard" className="px-3 py-3 text-base font-medium data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground transition-colors shadow-none">Standard</TabsTrigger>
-          <TabsTrigger value="wine" className="px-3 py-3 text-base font-small data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground transition-colors shadow-none">Wine Experience</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* Tabs and button on the same row */}
+      <div className="flex flex-row items-center justify-between mb-8 gap-4 w-full max-w-md">
+        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="flex-1">
+          <TabsList className="bg-muted p-2 rounded-full flex flex-row gap-2">
+            <TabsTrigger value="standard" className="px-3 py-2 text-base font-medium rounded-full data-[state=active]:bg-secondary data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground transition-colors shadow-none flex items-center justify-center">
+              <BedDouble className="h-5 w-5" />
+            </TabsTrigger>
+            <TabsTrigger value="wine" className="px-3 py-2 text-base font-medium rounded-full data-[state=active]:bg-secondary data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground transition-colors shadow-none flex items-center justify-center">
+              <Wine className="h-5 w-5" />
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <Button
+          variant="default"
+          className="px-4 py-2 whitespace-nowrap"
+          disabled={loading}
+          onClick={async () => {
+            setLoading(true)
+            const postId = window.location.pathname.split('/').pop()
+            const res = await fetch('/api/estimates', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                postId,
+                fromDate: startDate,
+                toDate: endDate,
+                guests: [],
+                customer: currentUser?.id,
+                packageType: selectedTab,
+                total: total,
+              }),
+            })
+            setLoading(false)
+            if (res.ok) {
+              const estimate = await res.json()
+              router.push(`/estimate/${estimate.id}`)
+            } else {
+              alert('Failed to create estimate')
+            }
+          }}
+        >
+          {loading ? 'Requesting...' : 'Request Availability'}
+        </Button>
+      </div>
       {/* Stay Length Form */}
       <div className="flex flex-col space-y-2 w-full max-w-md mb-6">
         <label className="text-gray-700 font-medium">Stay Length</label>
@@ -116,46 +155,30 @@ const PackageBlock = ({ currentUser, router }) => {
           </Popover>
         </div>
       </div>
-      <Button
-        variant="default"
-        className="px-4 py-2 w-full"
-        disabled={loading}
-        onClick={async () => {
-          setLoading(true)
-          const postId = window.location.pathname.split('/').pop()
-          const res = await fetch('/api/estimates', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              postId,
-              fromDate: startDate,
-              toDate: endDate,
-              guests: [],
-              total,
-              customer: currentUser?.id,
-              packageType: selectedTab,
-            }),
-          })
-          setLoading(false)
-          if (res.ok) {
-            const estimate = await res.json()
-            router.push(`/estimate/${estimate.id}`)
-          } else {
-            alert('Failed to create estimate')
-          }
-        }}
-      >
-        {loading ? 'Requesting...' : 'Request Availability'}
-      </Button>
-      <h3 className="text-xl font-semibold mb-2 mt-9">{pkg.title}</h3>
+      <h3 className="text-xl font-semibold mb-2">{pkg.title}</h3>
       <ul className="mb-4 list-disc pl-5 text-gray-700">
         {pkg.features.map((f, i) => <li key={i}>{f}</li>)}
+        <li>
+          <span className="font-bold">Total:</span> R{total.toFixed(2)}
+        </li>
+        <li>
+          <span className="font-bold">Post ID:</span> {window.location.pathname.split('/').pop()}
+        </li>
+        <li>
+          <a
+            href={`/posts/${window.location.pathname.split('/').pop()}`}
+            className="text-primary underline"
+            rel="noopener noreferrer"
+          >
+            /posts/{window.location.pathname.split('/').pop()}
+          </a>
+        </li>
       </ul>
     </div>
   )
 }
 
-const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
+const PageClient: React.FC<PageClientProps> = ({ page, draft, url, baseRate }) => {
   const { setHeaderTheme } = useHeaderTheme()
   const router = useRouter()
   const { currentUser, isLoading: isUserLoading } = useUserContext()
@@ -229,7 +252,7 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
         <div className="container mt-8 flex flex-col items-center space-y-4">
           <div className="w-full max-w-2xl mt-8">
             {isCustomer && isSubscribed && entitlements.includes('pro') ? (
-              <PackageBlock currentUser={currentUser} router={router} />
+              <PackageBlock currentUser={currentUser} router={router} baseRate={baseRate} />
             ) : isSubscriptionLoading ? (
               <div className="text-center text-muted-foreground py-12">Checking subscription...</div>
             ) : (
