@@ -4,17 +4,65 @@ import { Media } from '@/components/Media'
 import { Booking, User } from '@/payload-types'
 import { formatDateTime } from '@/utilities/formatDateTime'
 import { PlusCircleIcon, TrashIcon, UserIcon } from 'lucide-react'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import InviteUrlDialog from './_components/invite-url-dialog'
 import { Button } from '@/components/ui/button'
+import { Purchases, type Package, type Product } from '@revenuecat/purchases-js'
+import { useRevenueCat } from '@/providers/RevenueCat'
 
 type Props = {
   data: Booking
   user: User
 }
 
+interface RevenueCatProduct extends Product {
+  price?: number;
+  priceString?: string;
+  currencyCode?: string;
+}
+
 export default function BookingDetailsClientPage({ data, user }: Props) {
   const [removedGuests, setRemovedGuests] = React.useState<string[]>([])
+
+  // RevenueCat product state
+  const [offerings, setOfferings] = useState<Package[]>([])
+  const [loadingOfferings, setLoadingOfferings] = useState(true)
+  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [paymentSuccess, setPaymentSuccess] = useState(false)
+  const { isInitialized } = useRevenueCat();
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    const loadOfferings = async () => {
+      setLoadingOfferings(true)
+      try {
+        const fetchedOfferings = await Purchases.getSharedInstance().getOfferings()
+        console.log('Offerings:', fetchedOfferings)
+        // Only show cleaning, bottle of wine, and guided hike
+        const allowed = ['cleaning', 'Bottle_wine', 'Hike']
+        let allPackages: Package[] = []
+        // Prefer the 'add_ons' offering if it exists
+        const addOnsOffering = fetchedOfferings.all["add_ons"];
+        if (addOnsOffering && addOnsOffering.availablePackages.length > 0) {
+          setOfferings(addOnsOffering.availablePackages.filter(pkg => allowed.includes(pkg.webBillingProduct?.identifier)));
+        } else {
+          // Fallback: search all offerings for allowed add-ons
+          Object.values(fetchedOfferings.all).forEach(offering => {
+            if (offering && offering.availablePackages) {
+              allPackages = allPackages.concat(offering.availablePackages)
+            }
+          })
+          setOfferings(allPackages.filter(pkg => allowed.includes(pkg.webBillingProduct?.identifier)));
+        }
+      } catch (err) {
+        setPaymentError('Failed to load add-ons')
+      } finally {
+        setLoadingOfferings(false)
+      }
+    }
+    loadOfferings()
+  }, [isInitialized])
 
   const removeGuestHandler = async (guestId: string) => {
     const res = await fetch(`/api/bookings/${data.id}/guests/${guestId}`, {
@@ -125,6 +173,49 @@ export default function BookingDetailsClientPage({ data, user }: Props) {
                 </div>
               )
             })}
+        </div>
+        {/* Revenuecat cleaning fee, bottle of wine, guided hike */}
+        <div className="mt-10 max-w-screen-md mx-auto">
+          <h2 className="text-2xl font-bold mb-4">Add-ons</h2>
+          {loadingOfferings ? (
+            <p>Loading add-ons...</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[...new Map(offerings.map(pkg => [pkg.webBillingProduct?.identifier, pkg])).values()].map((pkg) => {
+                const product = pkg.webBillingProduct as RevenueCatProduct;
+                const isWine = product.identifier === 'Bottle_wine';
+                const isCleaning = product.identifier === 'cleaning';
+                const isHike = product.identifier === 'Hike';
+                return (
+                  <div key={product.identifier + '-' + pkg.identifier} className="border rounded-lg p-4 flex flex-col items-center">
+                    <div className="font-bold text-lg mb-2">{product.title || product.identifier}</div>
+                    <div className="mb-2 text-muted-foreground text-sm">{product.description}</div>
+                    <div className="mb-4 text-xl font-bold">{product.priceString || `R${product.price}`}</div>
+                    <Button
+                      className={isWine ? "bg-primary text-primary-foreground hover:bg-primary/90" : isCleaning ? "bg-yellow-200 text-yellow-900" : isHike ? "bg-green-200 text-green-900" : ""}
+                      onClick={async () => {
+                        setPaymentLoading(true)
+                        setPaymentError(null)
+                        try {
+                          await Purchases.getSharedInstance().purchase({ rcPackage: pkg })
+                          setPaymentSuccess(true)
+                        } catch (err) {
+                          setPaymentError('Failed to purchase add-on')
+                        } finally {
+                          setPaymentLoading(false)
+                        }
+                      }}
+                      disabled={paymentLoading}
+                    >
+                      {isWine ? 'Buy Bottle of Wine' : isCleaning ? 'Add Cleaning' : isHike ? 'Book Guided Hike' : 'Purchase'}
+                    </Button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+          {paymentError && <div className="text-red-500 mt-2">{paymentError}</div>}
+          {paymentSuccess && <div className="text-green-600 mt-2">Add-on purchased successfully!</div>}
         </div>
       </div>
     </div>

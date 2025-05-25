@@ -284,6 +284,7 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
     setLoadingOfferings(true)
     try {
       const fetchedOfferings = await Purchases.getSharedInstance().getOfferings()
+      console.log('Offerings:', fetchedOfferings)
       const perNightOffering = fetchedOfferings.all["per_night"]
       if (perNightOffering && perNightOffering.availablePackages.length > 0) {
         setOfferings(perNightOffering.availablePackages)

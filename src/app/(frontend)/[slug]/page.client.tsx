@@ -58,6 +58,31 @@ const PackageBlock = ({ currentUser, router, baseRate = 150 }) => {
 
   return (
     <div className="block bg-card shadow p-6 flex flex-col items-left">
+      <div className="flex flex-col space-y-4 w-full max-w-md">
+        <h3 className="text-lg font-semibold">{pkg.title}</h3>
+        <div className="space-y-2">
+          {pkg.features.map((feature, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-primary" />
+              <span className="text-sm text-muted-foreground">{feature}</span>
+            </div>
+          ))}
+        </div>
+        <div className="pt-4 border-t border-border">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Rate:</span>
+            <span className="font-medium">R{pkg.rate}/night</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Duration:</span>
+            <span className="font-medium">{duration} night{duration !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="flex justify-between items-center mt-2">
+            <span className="text-lg font-medium">Total:</span>
+            <span className="text-2xl font-bold">R{total.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
       {/* Tabs and button on the same row */}
       <div className="flex flex-row items-center justify-between mb-8 gap-4 w-full max-w-md">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="flex-1">
