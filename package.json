@@ -19,6 +19,7 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
   },
   "dependencies": {
+    "@google/genai": "^1.0.1",
     "@payloadcms/db-mongodb": "^3.37.0",
     "@payloadcms/db-postgres": "^3.25.0",
     "@payloadcms/live-preview-react": "latest",

@@ -17,6 +17,8 @@ import { Media } from '@/components/Media'
 import { formatDateTime } from '@/utilities/formatDateTime'
 import { UserIcon } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Calendar } from '@/components/ui/calendar'
+import { DateRange } from 'react-day-picker'
 
 interface RevenueCatError extends Error {
   code?: ErrorCode;
@@ -66,6 +68,12 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
   const [selectedDuration, setSelectedDuration] = useState<number>(typeof bookingDuration === 'number' ? bookingDuration : 1)
   const [isWineSelected, setIsWineSelected] = useState(false)
   const [packagePrice, setPackagePrice] = useState<number | null>(null)
+
+  // Add state for date range selection
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: data?.fromDate ? new Date(data.fromDate) : undefined,
+    to: data?.toDate ? new Date(data.toDate) : undefined,
+  })
 
   // Define package tiers with their thresholds and multipliers
   const packageTiers = [
@@ -484,8 +492,21 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
                 <p className="text-lg font-medium">
                   Date Estimated: {formatDateTime(data?.createdAt)}
                 </p>
-                <p className="text-lg font-medium">Estimate Start: {formatDateTime(data?.fromDate)}</p>
-                <p className="text-lg font-medium">Estimate End: {formatDateTime(data?.toDate)}</p>
+                <div className="flex flex-col gap-2">
+                  <label className="text-lg font-medium">Estimate Dates:</label>
+                  <Calendar
+                    mode="range"
+                    selected={dateRange}
+                    numberOfMonths={1}
+                    className="max-w-md"
+                    disabled={() => true}
+                  />
+                  <div className="text-muted-foreground text-sm mt-1">
+                    {dateRange && dateRange.from && dateRange.to
+                      ? `From ${formatDateTime(dateRange.from)} to ${formatDateTime(dateRange.to)}`
+                      : 'Select a start and end date'}
+                  </div>
+                </div>
               </div>
             </div>
           ) : (

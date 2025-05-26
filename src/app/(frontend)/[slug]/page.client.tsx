@@ -18,6 +18,7 @@ import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { calculateTotal } from '@/lib/calculateTotal'
+import { GoogleGenAI } from "@google/genai";
 
 export interface PageClientProps {
   page: PageType | null
@@ -26,13 +27,20 @@ export interface PageClientProps {
   baseRate?: number
 }
 
-// Refactor: Only render one PackageBlock, which manages its own tab state and renders the tabs inside itself
+// Gemini AI Example (client-side only)
+const ai = typeof window !== 'undefined' ? new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyAEQx7gPPm28A8kmsuFCaUCDcoYM08SL-E" }) : null;
+
 const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
   const [selectedTab, setSelectedTab] = useState('standard')
   const [startDate, setStartDate] = useState<Date | null>(new Date())
   const [endDate, setEndDate] = useState<Date | null>(new Date(new Date().setDate(new Date().getDate() + 5)))
   const [loading, setLoading] = useState(false)
   const [hikeImage, setHikeImage] = useState<string | null>(null)
+
+  // Gemini input and state moved here for access to setStartDate/setEndDate
+  const [geminiInput, setGeminiInput] = useState("");
+  const [geminiResult, setGeminiResult] = useState("");
+  const [geminiLoading, setGeminiLoading] = useState(false);
 
   const postId = typeof window !== 'undefined' ? window.location.pathname.split('/').pop() : ''
 
@@ -71,6 +79,35 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
     if (diffDays > 0) duration = diffDays
   }
   const total = calculateTotal(pkg.rate, duration, 1)
+
+  async function runGeminiDateParse() {
+    if (!ai || !geminiInput) return;
+    setGeminiLoading(true);
+    setGeminiResult("");
+    try {
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0]; // e.g. "2024-06-08"
+      const prompt = `Today is ${todayStr}. Extract the check-in and check-out dates from this booking request: "${geminiInput}". Return as JSON: {"fromDate": "YYYY-MM-DD", "toDate": "YYYY-MM-DD"}. Dates must be in the future, relative to today.`;
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: prompt,
+      });
+      let text = response.text || "";
+      setGeminiResult(text);
+      // Try to parse JSON from Gemini's response
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) {
+        const json = JSON.parse(match[0]);
+        if (json.fromDate && json.toDate) {
+          setStartDate(new Date(json.fromDate));
+          setEndDate(new Date(json.toDate));
+        }
+      }
+    } catch (err) {
+      setGeminiResult("Could not parse dates. Try a different phrase.");
+    }
+    setGeminiLoading(false);
+  }
 
   return (
     <div className="block bg-card shadow p-6 flex flex-col items-left">
@@ -128,6 +165,28 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
       {/* Stay Length Form */}
       <div className="flex flex-col space-y-2 w-full max-w-md mb-6">
         <label className="text-gray-700 font-medium">Stay Length</label>
+        {/* Gemini natural language input */}
+        <input
+          type="text"
+          className="border p-2 rounded w-full mb-2"
+          placeholder="e.g. next Friday to Sunday"
+          value={geminiInput}
+          onChange={e => setGeminiInput(e.target.value || "")}
+        />
+        <button
+          type="button"
+          className="px-4 py-2 bg-blue-500 text-white rounded mb-2"
+          onClick={runGeminiDateParse}
+          disabled={geminiLoading || !geminiInput}
+        >
+          {geminiLoading ? "Parsing..." : "Parse Dates with Gemini"}
+        </button>
+        {geminiResult && (
+          <div className="bg-gray-100 p-2 rounded text-sm">
+            <strong>Gemini Output:</strong>
+            <pre>{geminiResult}</pre>
+          </div>
+        )}
         <div className="flex space-x-2">
           <Popover>
             <PopoverTrigger asChild>

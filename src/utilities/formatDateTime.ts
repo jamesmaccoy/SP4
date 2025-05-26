@@ -1,7 +1,7 @@
-export const formatDateTime = (timestamp: string): string => {
+export const formatDateTime = (timestamp: string | Date): string => {
   const now = new Date()
   let date = now
-  if (timestamp) date = new Date(timestamp)
+  if (timestamp) date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp
   const months = date.getMonth()
   const days = date.getDate()
   // const hours = date.getHours();
