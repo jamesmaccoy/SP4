@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Purchases, type Package, type Product } from '@revenuecat/purchases-js'
 import { useRevenueCat } from '@/providers/RevenueCat'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Calendar } from '@/components/ui/calendar'
+import { DateRange } from 'react-day-picker'
 
 type Props = {
   data: Booking
@@ -121,7 +123,24 @@ export default function BookingDetailsClientPage({ data, user }: Props) {
                 <p className="text-lg font-medium">
                   Date Booked: {formatDateTime(data?.post.createdAt)}
                 </p>
-                <p className="text-lg font-medium">Arrival Date: {formatDateTime(data?.fromDate)}</p>
+                <div className="flex flex-col gap-2">
+                  <label className="text-lg font-medium">Booking Dates:</label>
+                  <Calendar
+                    mode="range"
+                    selected={{
+                      from: data?.fromDate ? new Date(data.fromDate) : undefined,
+                      to: data?.toDate ? new Date(data.toDate) : undefined,
+                    }}
+                    numberOfMonths={1}
+                    className="max-w-md"
+                    disabled={() => true}
+                  />
+                  <div className="text-muted-foreground text-sm mt-1">
+                    {data?.fromDate && data?.toDate
+                      ? `From ${formatDateTime(data.fromDate)} to ${formatDateTime(data.toDate)}`
+                      : 'Select a start and end date'}
+                  </div>
+                </div>
               </div>
             </div>
           ) : (

@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { calculateTotal } from '@/lib/calculateTotal'
 import { GoogleGenAI } from "@google/genai";
+import { Input } from '@/components/ui/input';
 
 export interface PageClientProps {
   page: PageType | null
@@ -166,21 +167,21 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
       <div className="flex flex-col space-y-2 w-full max-w-md mb-6">
         <label className="text-gray-700 font-medium">Stay Length</label>
         {/* Gemini natural language input */}
-        <input
+        <Input
           type="text"
-          className="border p-2 rounded w-full mb-2"
           placeholder="e.g. next Friday to Sunday"
           value={geminiInput}
           onChange={e => setGeminiInput(e.target.value || "")}
+          className="mb-2"
         />
-        <button
+        <Button
           type="button"
-          className="px-4 py-2 bg-blue-500 text-white rounded mb-2"
           onClick={runGeminiDateParse}
           disabled={geminiLoading || !geminiInput}
+          className="mb-2"
         >
           {geminiLoading ? "Parsing..." : "Parse Dates with Gemini"}
-        </button>
+        </Button>
         {geminiResult && (
           <div className="bg-gray-100 p-2 rounded text-sm">
             <strong>Gemini Output:</strong>
