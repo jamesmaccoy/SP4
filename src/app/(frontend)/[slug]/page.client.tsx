@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserContext } from '@/context/UserContext'
 import { useSubscription } from '@/hooks/useSubscription'
@@ -46,6 +46,9 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
 
   const postId = typeof window !== 'undefined' ? window.location.pathname.split('/').pop() : ''
 
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
   useEffect(() => {
     if (selectedTab === 'hiking' && postId) {
       // Example: fetch image from /posts/{postId} (simulate with static image for now)
@@ -74,6 +77,26 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
     setGeminiPlaceholder(placeholder);
     setGeminiInput(""); // Optionally: setGeminiInput(suggestion);
   }, [selectedTab]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
+      // @ts-ignore
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.lang = "en-US";
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.maxAlternatives = 1;
+
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setGeminiInput(transcript);
+        setListening(false);
+      };
+
+      recognitionRef.current.onend = () => setListening(false);
+      recognitionRef.current.onerror = () => setListening(false);
+    }
+  }, []);
 
   const packages = {
     standard: {
@@ -178,22 +201,31 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
             onChange={e => setGeminiInput(e.target.value || "")}
             className="mx-50"
           />
-      <Button
+          <Button
+            type="button"
             variant="ghost"
-            onClick={runGeminiDateParse}
-            disabled={geminiLoading || !geminiInput}
-            className="mb-2"
+            onClick={() => {
+              if (recognitionRef.current && !listening) {
+                setListening(true);
+                recognitionRef.current.start();
+              }
+            }}
+            disabled={listening}
+            aria-label="Speak your request"
           >
-            {geminiLoading ? "Parsing..." : "Schedule Assistance"}
+            {listening ? "Listening..." : <span role="img" aria-label="microphone">🎤</span>}
           </Button>
     </div>
         </form>
+        
+        <div>
         {geminiResult && (
-          <div className="bg-gray-100 p-2 rounded text-sm">
-            <strong>Gemini Output:</strong>
-            <pre>{geminiResult}</pre>
+          <div className="p-2 rounded text-sm">
+            <p>Gemini Output:</p>
+            <pre className="whitespace-pre-wrap">{geminiResult}</pre>
           </div>
-        )}
+        )}</div>
+
         <div className="flex space-x-2">
           <Popover>
             <PopoverTrigger asChild>
