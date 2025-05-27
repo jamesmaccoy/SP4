@@ -37,7 +37,12 @@ export const HeaderNav: React.FC<{ data: HeaderType }> = ({ data }) => {
           Login
         </Link>
       ) : (
-        <div className="font-medium text-sm text-primary">Hello, {currentUser.name}</div>
+        <>
+          <div className="font-medium text-sm text-primary">Hello, {currentUser.name}</div>
+          <Link className={buttonVariants({ variant: "link" })} href="/account">
+            Account
+          </Link>
+        </>
       )}
     </nav>
   )

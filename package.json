@@ -19,6 +19,10 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
   },
   "dependencies": {
+<<<<<<< Updated upstream
+=======
+    "@google/genai": "^1.1.0",
+>>>>>>> Stashed changes
     "@payloadcms/db-mongodb": "^3.37.0",
     "@payloadcms/db-postgres": "^3.25.0",
     "@payloadcms/live-preview-react": "latest",
@@ -66,6 +70,8 @@
     "react-day-picker": "^8.10.1",
     "react-dom": "^19.0.0",
     "react-hook-form": "7.45.4",
+    "react-native-purchases": "^8.10.1",
+    "react-native-purchases-ui": "^8.10.1",
     "sass": "^1.85.1",
     "sharp": "^0.34.1",
     "tailwind-merge": "^2.3.0",
