@@ -47,7 +47,6 @@ export default function Account() {
     subscriptionInfo.type === 'resource_missing'
   ) {
     return (
-            // Manage subscriptions screen is displayed
       <div>
         <h1>Account</h1>
         <h2>User Info</h2>
@@ -55,7 +54,6 @@ export default function Account() {
         <h2>RevenueCat Subscription Info</h2>
         <div>No subscription found for this user.</div>
       </div>
-      
     );
   }
 
@@ -67,7 +65,6 @@ export default function Account() {
       <pre>{JSON.stringify(currentUser, null, 2)}</pre>
       <h2>RevenueCat Subscription Info</h2>
       <pre>{JSON.stringify(subscriptionInfo, null, 2)}</pre>
-      {/* Render entitlements, subscriptions, etc. here */}
     </div>
   );
 }
