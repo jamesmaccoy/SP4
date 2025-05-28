@@ -9,6 +9,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    console.log('RevenueCat key prefix:', process.env.REVENUECAT_SECRET_KEY?.slice(0, 8));
+    console.log('Fetching user:', appUserId);
     const response = await fetch(`https://api.revenuecat.com/v2/subscribers/${appUserId}`, {
       method: 'GET',
       headers: {
