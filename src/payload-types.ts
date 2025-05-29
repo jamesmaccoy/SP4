@@ -408,7 +408,7 @@ export interface Page {
       | null;
     media?: (string | null) | Media;
   };
-  layout: (CallToActionBlock | ContentBlock | MediaBlock | ArchiveBlock | FormBlock | GalleryBlock)[];
+  layout: (CallToActionBlock | ContentBlock | MediaBlock | ArchiveBlock | FormBlock | GalleryBlock | RawHTMLBlock)[];
   meta?: {
     title?: string | null;
     /**
@@ -825,6 +825,17 @@ export interface GalleryBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "RawHTMLBlock".
+ */
+export interface RawHTMLBlock {
+  html: string;
+  className?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'rawHTML';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -1065,6 +1076,7 @@ export interface PagesSelect<T extends boolean = true> {
         archive?: T | ArchiveBlockSelect<T>;
         formBlock?: T | FormBlockSelect<T>;
         gallery?: T | GalleryBlockSelect<T>;
+        rawHTML?: T | RawHTMLBlockSelect<T>;
       };
   meta?:
     | T
@@ -1178,6 +1190,16 @@ export interface GalleryBlockSelect<T extends boolean = true> {
         id?: T;
       };
   galleryCaption?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "RawHTMLBlock_select".
+ */
+export interface RawHTMLBlockSelect<T extends boolean = true> {
+  html?: T;
+  className?: T;
   id?: T;
   blockName?: T;
 }

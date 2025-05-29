@@ -10,6 +10,7 @@ import { FormBlock } from '@/blocks/Form/Component'
 import { MediaBlock } from '@/blocks/MediaBlock/Component'
 import { StayDuration } from '@/blocks/StayDuration/Component'
 import { GalleryBlock } from '@/blocks/Gallery/component'
+import { RawHTMLBlock } from '@/blocks/RawHTMLBlock/component'
 
 const blockComponents = {
   archive: ArchiveBlock,
@@ -19,6 +20,7 @@ const blockComponents = {
   mediaBlock: MediaBlock,
   stayDuration: StayDuration,
   gallery: GalleryBlock,
+  rawHTML: RawHTMLBlock,
 }
 
 export const RenderBlocks: React.FC<{

@@ -1,0 +1,10 @@
+.fullmap {
+  width: 100%;
+  max-width: 100vw;
+}
+.fullmap iframe {
+  width: 100% !important;
+  height: 450px;
+  display: block;
+  border: 0;
+} 
