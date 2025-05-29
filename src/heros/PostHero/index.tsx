@@ -54,6 +54,9 @@ export const PostHero: React.FC<{
                 </div>
               </div>
             )}
+            <Button asChild  className="flex flex-col gap-1 justify-center items-start min-w-[120px] text-sm font-normal text-black">
+              <a href={`/${post?.slug}`} rel="noopener noreferrer">Trip planner</a>
+            </Button>
             <Button asChild variant="outline" className="flex flex-col gap-1 justify-center items-start min-w-[120px] text-sm font-normal text-secondary border-secondary border-2 border-solid  bg-transparent">
               <a href="#book-now" onClick={e => {
                 e.preventDefault();
@@ -66,9 +69,6 @@ export const PostHero: React.FC<{
                   <span>From R{(post.baseRate * 0.7).toFixed(2)}/night</span>
                 )}
               </a>
-            </Button>
-            <Button asChild  className="flex flex-col gap-1 justify-center items-start min-w-[120px] text-sm font-normal text-black">
-              <a href={`/${post?.slug}`} rel="noopener noreferrer">Trip planner</a>
             </Button>
           </div>
         </div>

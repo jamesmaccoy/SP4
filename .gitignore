@@ -13,3 +13,6 @@ public/robots.txt
 public/sitemap*.xml
 
 credential/analytics.json
+
+*storybook.log
+storybook-static

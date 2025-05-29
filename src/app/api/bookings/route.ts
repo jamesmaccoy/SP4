@@ -107,3 +107,32 @@ export async function POST(req: Request) {
     )
   }
 }
+
+export async function GET(req: Request) {
+  try {
+    const url = new URL(req.url!);
+    const postId = url.searchParams.get('postId');
+    if (!postId) {
+      return NextResponse.json({ error: 'postId is required' }, { status: 400 });
+    }
+    const payload = await getPayload({ config });
+    // Find all bookings for this post (future and past)
+    const bookings = await payload.find({
+      collection: 'bookings',
+      where: {
+        post: { equals: postId },
+      },
+      limit: 100,
+      depth: 0,
+      select: {
+        fromDate: true,
+        toDate: true,
+      },
+    });
+    // Return only fromDate and toDate for each booking
+    const result = bookings.docs.map(b => ({ fromDate: b.fromDate, toDate: b.toDate }));
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch bookings: ' + (error as Error).message }, { status: 500 });
+  }
+}

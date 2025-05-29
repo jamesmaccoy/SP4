@@ -51,7 +51,12 @@ export default async function Post({ params: paramsPromise }: Args) {
 
   return (
     <article className="pt-16 pb-16">
-      <PageClient baseRate={typeof post.baseRate === 'number' ? post.baseRate : undefined} />
+      <PageClient
+        page={post}
+        draft={draft}
+        url={url}
+        baseRate={typeof post.baseRate === 'number' ? post.baseRate : undefined}
+      />
 
       {/* Allows redirects for valid pages too */}
       <PayloadRedirects disableNotFound url={url} />

@@ -21,6 +21,8 @@ import { calculateTotal } from '@/lib/calculateTotal'
 import { GoogleGenAI } from "@google/genai";
 import { Input } from '@/components/ui/input';
 
+
+
 export interface PageClientProps {
   page: PageType | null
   draft: boolean
@@ -153,7 +155,23 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
       } else {
         context = "The user wants a standard accommodation stay.";
       }
-      const prompt = `Today is ${todayStr}. ${context} Extract the check-in and check-out dates from this booking request: "${geminiInput}". Return as JSON: {\"fromDate\": \"YYYY-MM-DD\", \"toDate\": \"YYYY-MM-DD\"}. Dates must be in the future, relative to today. If a specific time is relevant (like 9am or 1pm for film studio), include it in the JSON as {\"fromDate\":\"YYYY-MM-DDTHH:MM\",\"toDate\":\"YYYY-MM-DDTHH:MM\"}.`;
+      // Fetch all bookings for this postId
+      const bookingsRes = await fetch(`/api/bookings?postId=${postId}`);
+      const bookings = await bookingsRes.json();
+      const prompt = `
+Today is ${todayStr}. ${context}
+Here are all existing bookings for this post:
+${JSON.stringify(bookings)}
+Extract the check-in and check-out dates from this booking request: "${geminiInput}".
+Return as JSON: {
+  "fromDate": "YYYY-MM-DD",
+  "toDate": "YYYY-MM-DD",
+  "overlap": true/false,
+  "conflictingBookings": [ {fromDate, toDate}, ... ] // if any
+}
+Dates must be in the future, relative to today. If a specific time is relevant (like 9am or 1pm for film studio), include it in the JSON as {"fromDate":"YYYY-MM-DDTHH:MM","toDate":"YYYY-MM-DDTHH:MM"}.
+If the requested dates overlap with any existing booking, set "overlap" to true and list the conflicting bookings.
+`;
       const response = await ai.models.generateContent({
         model: "gemini-2.0-flash",
         contents: prompt,
@@ -168,6 +186,7 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
           setStartDate(new Date(json.fromDate));
           setEndDate(new Date(json.toDate));
         }
+        // Optionally, handle overlap/conflictingBookings here (e.g., show a warning)
       }
     } catch (err) {
       setGeminiResult("Could not parse dates. Try a different phrase.");
@@ -341,13 +360,26 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
       className="px-4 py-2 whitespace-nowrap"
       disabled={loading}
       onClick={async () => {
-        setLoading(true)
-        const postId = window.location.pathname.split('/').pop()
+        setLoading(true);
+        let finalPostId = postId;
+        if (!finalPostId && currentUser?.id) {
+          // Fetch last estimate for the user
+          const res = await fetch(`/api/estimates/last?customer=${currentUser.id}`);
+          if (res.ok) {
+            const lastEstimate = await res.json();
+            finalPostId = lastEstimate?.postId;
+          }
+        }
+        if (!finalPostId) {
+          alert('No postId available for estimate');
+          setLoading(false);
+          return;
+        }
         const res = await fetch('/api/estimates', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            postId,
+            postId: finalPostId,
             fromDate: startDate,
             toDate: endDate,
             guests: [],
@@ -355,13 +387,13 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
             packageType: selectedTab,
             total: total,
           }),
-        })
-        setLoading(false)
+        });
+        setLoading(false);
         if (res.ok) {
-          const estimate = await res.json()
-          router.push(`/estimate/${estimate.id}`)
+          const estimate = await res.json();
+          router.push(`/estimate/${estimate.id}`);
         } else {
-          alert('Failed to create estimate')
+          alert('Failed to create estimate');
         }
       }}
     >

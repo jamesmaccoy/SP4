@@ -56,11 +56,12 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
         // Get customer info
         const info = await purchases.getCustomerInfo()
+        console.log('Customer info:', info)
         setCustomerInfo(info)
         setError(null)
       } catch (err) {
-        console.error('Failed to initialize RevenueCat:', err)
-        setError(err instanceof Error ? err : new Error('Unknown error initializing RevenueCat'))
+        console.error('RevenueCat getCustomerInfo error:', err)
+        setError(err)
       } finally {
         setIsLoading(false)
       }

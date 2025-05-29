@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { useRevenueCat } from '@/providers/RevenueCat'
 import { Purchases, type Package, ErrorCode, type Product } from '@revenuecat/purchases-js'
 import { useRouter } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
+import { FileText, Loader2 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Check } from 'lucide-react'
@@ -472,9 +472,11 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
 
         <TabsList className="mb-6 bg-muted p-2 rounded-full flex flex-row gap-2">
           <TabsTrigger value="details" className="px-3 py-2 rounded-full flex items-center gap-2 data-[state=active]:bg-secondary data-[state=active]:text-foreground">
+          <FileText className="h-5 w-5" />
             Details
           </TabsTrigger>
           <TabsTrigger value="guests" className="px-3 py-2 rounded-full flex items-center gap-2 data-[state=active]:bg-secondary data-[state=active]:text-foreground">
+          <UserIcon className="h-5 w-5" />
             Guests
           </TabsTrigger>
         </TabsList>
@@ -484,20 +486,14 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
           {/* --- Estimate Info Section --- */}
           {data && 'post' in data && typeof data?.post !== 'string' ? (
             <div className="flex items-start flex-col md:flex-row gap-5 md:gap-10 mb-8">
-              <div className="md:max-w-[450px] w-full rounded-md overflow-hidden">
-                {!!data?.post.meta?.image && <Media resource={data?.post.meta?.image || undefined} />}
-              </div>
               <div className="md:py-5 py-3">
                 <h1 className="text-4xl mb-3 font-bold">{data?.post.title}</h1>
-                <p className="text-lg font-medium">
-                  Date Estimated: {formatDateTime(data?.createdAt)}
-                </p>
                 <div className="flex flex-col gap-2">
                   <label className="text-lg font-medium">Estimate Dates:</label>
                   <Calendar
                     mode="range"
                     selected={dateRange}
-                    numberOfMonths={1}
+                    numberOfMonths={2}
                     className="max-w-md"
                     disabled={() => true}
                   />
@@ -507,6 +503,20 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
                       : 'Select a start and end date'}
                   </div>
                 </div>
+              </div>
+              <div className="w-full rounded-md overflow-hidden bg-muted p-2 flex items-center gap-3">
+                {!!data?.post.meta?.image && (
+                  <div className="w-24 h-24 flex-shrink-0 rounded-md overflow-hidden border border-border bg-white">
+                    <Media
+                      resource={data?.post.meta?.image || undefined}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="flex flex-col text-white">
+                <span className="font-medium">Date Estimated: {formatDateTime(data?.createdAt)}</span>
+                <span className="font-medium">Guests: {Array.isArray(data?.guests) ? data.guests.length : 0}</span>
+              </div>
               </div>
             </div>
           ) : (
@@ -539,7 +549,7 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
                 </CardContent>
                 <CardFooter>
                   <span className="text-2xl font-bold">
-                    {formatPrice(packagePrice)}/night
+                    {formatPrice(packagePrice)} with membership
                   </span>
                 </CardFooter>
               </Card>
@@ -635,7 +645,7 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
         </TabsContent>
       </Tabs>
 
-        {/* --- Booking Summary --- */}
+        {/* --- Estimate Summary --- */}
         <div className="mb-8 bg-muted p-6 rounded-lg border border-border">
             <h2 className="text-2xl font-semibold mb-4">Estimate Summary</h2>
             <div className="flex justify-between items-center mb-4">
@@ -645,7 +655,7 @@ export default function EstimateDetailsClientPage({ data, user }: Props) {
               </span>
             </div>
             <div className="flex justify-between items-center mb-4">
-              <span className="text-muted-foreground">Rate per night:</span>
+              <span className="text-muted-foreground">With membership:</span>
               <span className="font-medium">
                 {formatPrice(packagePrice)}
               </span>

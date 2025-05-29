@@ -114,15 +114,8 @@ export default function BookingDetailsClientPage({ data, user }: Props) {
         <TabsContent value="details">
           {data && 'post' in data && typeof data?.post !== 'string' ? (
             <div className="flex items-start flex-col md:flex-row gap-5 md:gap-10">
-              <div className="md:max-w-[450px] w-full rounded-md overflow-hidden">
-                {!!data?.post.meta?.image && <Media resource={data?.post.meta?.image || undefined} />}
-              </div>
               <div className="md:py-5 py-3">
                 <h1 className="text-4xl mb-3 font-bold">{data?.post.title}</h1>
-
-                <p className="text-lg font-medium">
-                  Date Booked: {formatDateTime(data?.post.createdAt)}
-                </p>
                 <div className="flex flex-col gap-2">
                   <label className="text-lg font-medium">Booking Dates:</label>
                   <Calendar
@@ -131,7 +124,7 @@ export default function BookingDetailsClientPage({ data, user }: Props) {
                       from: data?.fromDate ? new Date(data.fromDate) : undefined,
                       to: data?.toDate ? new Date(data.toDate) : undefined,
                     }}
-                    numberOfMonths={1}
+                    numberOfMonths={2}
                     className="max-w-md"
                     disabled={() => true}
                   />
@@ -140,6 +133,20 @@ export default function BookingDetailsClientPage({ data, user }: Props) {
                       ? `From ${formatDateTime(data.fromDate)} to ${formatDateTime(data.toDate)}`
                       : 'Select a start and end date'}
                   </div>
+                </div>
+              </div>
+              <div className="w-full rounded-md overflow-hidden bg-muted p-2 flex items-center gap-3">
+                {!!data?.post.meta?.image && (
+                  <div className="w-24 h-24 flex-shrink-0 rounded-md overflow-hidden border border-border bg-white">
+                    <Media
+                      resource={data?.post.meta?.image || undefined}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="flex flex-col text-white">
+                  <span className="font-medium">Date Booked: {formatDateTime(data?.post.createdAt)}</span>
+                  <span className="font-medium">Guests: {Array.isArray(data?.guests) ? data.guests.length : 0}</span>
                 </div>
               </div>
             </div>

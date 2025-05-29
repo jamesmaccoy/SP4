@@ -1,10 +1,15 @@
 // src/routes/analytics.ts
 import { google } from 'googleapis'
-import { Router } from 'express'
-const analyticsRouter = Router()
+import type { NextApiRequest, NextApiResponse } from 'next'
+
 const SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
 const KEY_FILE = process.env.GOOGLE_SERVICE_ACCOUNT_JSON // update path
-analyticsRouter.get('/', async (req, res) => {
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Method not allowed' })
+    return
+  }
   try {
     const auth = new google.auth.GoogleAuth({
       keyFile: KEY_FILE,
@@ -23,11 +28,9 @@ analyticsRouter.get('/', async (req, res) => {
         dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
       },
     })
-    res.json(response.data)
+    res.status(200).json(response.data)
   } catch (error) {
     console.error(error)
-    res.status(500).send('Analytics error')
+    res.status(500).json({ error: 'Analytics error' })
   }
-})
-
-export default analyticsRouter
+}

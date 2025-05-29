@@ -39,7 +39,14 @@ export const Card: React.FC<{
     >
       <div className="relative w-full ">
         {!metaImage && <div className="">No image</div>}
-        {metaImage && typeof metaImage !== 'string' && <Media resource={metaImage} size="33vw" />}
+        <div className="relative">
+          {metaImage && typeof metaImage !== 'string' && <Media resource={metaImage} size="33vw" />}
+          {typeof (doc as any)?.baseRate === 'number' && (
+            <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-semibold z-10">
+              R{(doc as any).baseRate}
+            </div>
+          )}
+        </div>
       </div>
       <div className="p-4">
         {showCategories && hasCategories && (

@@ -63,10 +63,12 @@ export default async function Bookings() {
       <PageClient />
       <div className="my-10 container space-y-10">
         <div className="flex justify-end mb-6">
-          {latestEstimate && (
+          {latestEstimate ? (
             <Link href={`/estimate/${latestEstimate.id}`}>
               <Button variant="default">View your last estimate</Button>
             </Link>
+          ) : (
+            <Button variant="default" disabled>No estimate available</Button>
           )}
         </div>
 
