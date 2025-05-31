@@ -169,6 +169,29 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage, slug }) 
     }
   }, [assistantContext.prefill])
 
+  // Build the context string for display and Gemini
+  const contextParts: string[] = [];
+  if (pkgType) {
+    const lastPackageTitle = packages[pkgType]?.title || capitalize(pkgType);
+    contextParts.push(
+      `The user's last package for ${slug} was "${lastPackageTitle}".`
+    );
+    if (latestEstimate?.fromDate && latestEstimate?.toDate) {
+      contextParts.push(
+        `Their last check-in date was ${formatDate(latestEstimate.fromDate)} and check-out date was ${formatDate(latestEstimate.toDate)}.`
+      );
+    }
+  }
+  contextParts.push(
+    `Available packages for ${slug}: ${Object.values(packages).map(p => p.title).join(', ')}.`
+  );
+  const assistantContextString = contextParts.join(' ');
+
+  // Personalized Gemini input placeholder
+  const personalizedPlaceholder = pkgType && latestEstimate?.fromDate && latestEstimate?.toDate
+    ? `Welcome back! Last time you considered the ${packages[pkgType]?.title || capitalize(pkgType)} package for ${slug} from ${formatDate(latestEstimate.fromDate)} to ${formatDate(latestEstimate.toDate)}. Would you like to book the same again, or try a different package?`
+    : geminiPlaceholder;
+
   async function runGeminiDateParse() {
     if (!ai || !geminiInput) return;
     setGeminiLoading(true);
@@ -236,16 +259,20 @@ If the user asks about their last package, respond with the last package info an
 
   return (
     <div className="block bg-card shadow p-6 flex flex-col items-left">
-            <div className="flex justify-end mb-6">
-          {latestEstimate ? (
-            <Link href={`/estimate/${latestEstimate.id}`}>
-              {/* TODO: submit the dates selected by the user to update the previous estimate */}
-              <Button variant="default">Request availability</Button>
-            </Link>
-          ) : (
-            <Button variant="default" disabled>No estimate available</Button>
-          )}
-        </div>
+      {/* Show context info at the top */}
+      <div className="mb-4 p-3 bg-muted rounded text-sm text-muted-foreground">
+        {assistantContextString}
+      </div>
+      <div className="flex justify-end mb-6">
+        {latestEstimate ? (
+          <Link href={`/estimate/${latestEstimate.id}`}>
+            {/* TODO: submit the dates selected by the user to update the previous estimate */}
+            <Button variant="default">Request availability</Button>
+          </Link>
+        ) : (
+          <Button variant="default" disabled>No estimate available</Button>
+        )}
+      </div>
 
       {/* Issue Booking Form */}
       <div className="flex flex-col space-y-2 w-full max-w-md mb-6">
@@ -264,7 +291,7 @@ If the user asks about their last package, respond with the last package info an
           <div className="flex w-full max-w-sm items-center space-x-2">
           <Input
             type="text"
-            placeholder={geminiPlaceholder}
+            placeholder={personalizedPlaceholder}
             value={geminiInput}
             onChange={e => setGeminiInput(e.target.value || "")}
             className="mx-50"
