@@ -287,15 +287,15 @@ If the user asks about their last package, respond with the last package info an
   return (
     <div className="blockbg-card shadow p-6 flex flex-col items-left ">
       {/* Show context info at the top */}
-      <div className="mb-4 p-3 bg-muted rounded text-sm text-muted-foreground w-full h-full">
+     {/* <div className="mb-4 p-3 bg-muted rounded text-sm text-muted-foreground w-full h-full">
         {assistantContextString}
-      </div>
+      </div> */}
      
 
       {/* Issue Booking Form */}
       <div className="flex flex-col space-y-2 w-full mb-6 p-6 rounded-lg shadow-lg">
         
-        <label className="text-gray-700 font-medium">When where you thinking</label>
+        <label className="text-gray-700 font-medium center-content">When where you thinking</label>
         {/* Gemini natural language input and button in a form */}
         <form
           onSubmit={e => {
@@ -307,12 +307,11 @@ If the user asks about their last package, respond with the last package info an
           
          
           <div className="flex w-full items-center space-x-2">
-          <Input
-            type="text"
+          <textarea
             placeholder={personalizedPlaceholder}
             value={geminiInput}
             onChange={e => setGeminiInput(e.target.value || "")}
-            className="w-full border-2 rounded-2xl h-16 text-xl font-bold px-6 py-4 shadow-lg focus:ring-4 focus:ring-green-200"
+            className="w-full border-2 rounded-2xl text-xl px-6 py-4 shadow-lg focus:ring-4 focus:ring-green-200 resize-none min-h-[4rem] max-h-[16rem] overflow-auto text-foreground dark:text-foreground"
           />
           <Button
             type="button"
