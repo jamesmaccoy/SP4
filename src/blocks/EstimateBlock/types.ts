@@ -1,4 +1,4 @@
-export interface StayDurationBlock {
+export interface EstimateBlockType {
   blockType: 'stayDuration'
   baseRate?: number
   baseRateOverride?: number

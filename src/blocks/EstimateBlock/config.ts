@@ -2,7 +2,7 @@ import type { Block } from 'payload'
 
 export const StayDuration: Block = {
   slug: 'stayDuration',
-  interfaceName: 'StayDurationBlock',
+  interfaceName: 'EstimateBlockType',
   fields: [
     {
       name: 'baseRateOverride',

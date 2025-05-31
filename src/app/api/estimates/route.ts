@@ -75,6 +75,7 @@ export async function POST(request: Request) {
         fromDate,
         toDate,
         customer,
+        packageType,
       },
     });
     return new Response(JSON.stringify(updated), {
@@ -94,6 +95,7 @@ export async function POST(request: Request) {
       guests,
       total,
       customer,
+      packageType,
     },
   });
 

@@ -154,6 +154,7 @@ export interface Estimate {
   paymentStatus?: ('paid' | 'unpaid') | null;
   fromDate: string;
   toDate: string;
+  packageType?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1017,6 +1018,7 @@ export interface EstimatesSelect<T extends boolean = true> {
   paymentStatus?: T;
   fromDate?: T;
   toDate?: T;
+  packageType?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1743,9 +1745,9 @@ export interface CodeBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "StayDurationBlock".
+ * via the `definition` "EstimateBlockType".
  */
-export interface StayDurationBlock {
+export interface EstimateBlockType {
   baseRateOverride: number;
   id?: string | null;
   blockName?: string | null;

@@ -86,10 +86,10 @@ export default async function Page({ params: paramsPromise }: Args) {
   }
 
   if (!page) {
-    return <PageClient page={page} draft={draft} url={url} />
+    return <PageClient page={page} draft={draft} url={url} slug={slug} />
   }
 
-  return <PageClient page={page} draft={draft} url={url} />
+  return <PageClient page={page} draft={draft} url={url} slug={slug} />
 }
 
 export async function generateMetadata({ params: paramsPromise }): Promise<Metadata> {

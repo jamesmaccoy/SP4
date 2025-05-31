@@ -12,8 +12,8 @@ import {
 } from '@payloadcms/richtext-lexical/react'
 
 import { CodeBlock, CodeBlockProps } from '@/blocks/Code/Component'
-import { StayDuration } from '@/blocks/StayDuration/Component'
-import type { StayDurationBlock } from '@/blocks/StayDuration/types'
+import { EstimateBlock } from '@/blocks/EstimateBlock/Component'
+import type { EstimateBlockType } from '@/blocks/EstimateBlock/types'
 
 import type {
   BannerBlock as BannerBlockProps,
@@ -26,7 +26,7 @@ import { cn } from '@/utilities/cn'
 
 type NodeTypes =
   | DefaultNodeTypes
-  | SerializedBlockNode<CTABlockProps | MediaBlockProps | BannerBlockProps | CodeBlockProps | StayDurationBlock>
+  | SerializedBlockNode<CTABlockProps | MediaBlockProps | BannerBlockProps | CodeBlockProps | EstimateBlockType>
   | SerializedLinkNode
 
 const internalDocToHref = ({ linkNode }: { linkNode: SerializedLinkNode }) => {
@@ -55,7 +55,7 @@ const jsxConverters: JSXConvertersFunction<NodeTypes> = ({ defaultConverters }) 
     ),
     code: ({ node }) => <CodeBlock className="col-start-2" {...node.fields} />,
     cta: ({ node }) => <CallToActionBlock {...node.fields} />,
-    stayDuration: ({ node }) => <StayDuration {...node.fields} />,
+    stayDuration: ({ node }) => <EstimateBlock {...node.fields} baseRate={typeof node.fields.baseRate === 'number' ? node.fields.baseRate : 0} postId={''} />,
   },
 })
 

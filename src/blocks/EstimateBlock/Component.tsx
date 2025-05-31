@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { CalendarIcon } from 'lucide-react'
 import type { SelectSingleEventHandler } from 'react-day-picker'
-import type { StayDurationBlock } from './types'
+import type { EstimateBlockType } from './types'
 import { useUserContext } from '@/context/UserContext'
 import { useSubscription } from '@/hooks/useSubscription'
-import { Estimate } from './collections/Estimates'
+
 import { calculateTotal } from '@/lib/calculateTotal'
 
-export type StayDurationProps = StayDurationBlock & {
+export type EstimateBlockProps = EstimateBlockType & {
   className?: string
   postId: string
   baseRate: number
@@ -67,7 +67,7 @@ const packageTiers = [
   }
 ]
 
-export const StayDuration: React.FC<StayDurationProps> = ({ className, baseRate = 150, baseRateOverride, blockType, postId }) => {
+export const EstimateBlock: React.FC<EstimateBlockProps> = ({ className, baseRate = 150, baseRateOverride, blockType, postId }) => {
   const effectiveBaseRate = typeof baseRateOverride === 'number' ? baseRateOverride : baseRate;
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)

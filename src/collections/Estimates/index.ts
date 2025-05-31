@@ -376,6 +376,14 @@ export const Estimate: CollectionConfig = {
         update: isAdminField,
       },
     },
+    {
+      name: 'packageType',
+      type: 'text',
+      required: false,
+      admin: {
+        position: 'sidebar',
+      },
+    },
   ],
   hooks: {
     beforeChange: [

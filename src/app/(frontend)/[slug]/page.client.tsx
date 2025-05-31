@@ -20,6 +20,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { calculateTotal } from '@/lib/calculateTotal'
 import { GoogleGenAI } from "@google/genai";
 import { Input } from '@/components/ui/input';
+import Link from 'next/link';
+import { Estimate } from '@/payload-types'
+import configPromise from '@payload-config'
+import { getPayload } from 'payload'
 
 export interface PageClientProps {
   page: PageType | null
@@ -31,12 +35,15 @@ export interface PageClientProps {
 // Gemini AI Example (client-side only)
 const ai = typeof window !== 'undefined' ? new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyAEQx7gPPm28A8kmsuFCaUCDcoYM08SL-E" }) : null;
 
-const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
+const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage, slug }) => {
   const [selectedTab, setSelectedTab] = useState('standard')
   const [startDate, setStartDate] = useState<Date | null>(new Date())
   const [endDate, setEndDate] = useState<Date | null>(new Date(new Date().setDate(new Date().getDate() + 5)))
   const [loading, setLoading] = useState(false)
   const [hikeImage, setHikeImage] = useState<string | null>(null)
+
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   // Gemini input and state moved here for access to setStartDate/setEndDate
   const [geminiInput, setGeminiInput] = useState("");
@@ -44,18 +51,15 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
   const [geminiLoading, setGeminiLoading] = useState(false);
   const [geminiPlaceholder, setGeminiPlaceholder] = useState("e.g. next Friday to Sunday");
 
-  const postId = typeof window !== 'undefined' ? window.location.pathname.split('/').pop() : ''
-
-  const [listening, setListening] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const [latestEstimate, setLatestEstimate] = useState<Estimate | null>(null);
 
   useEffect(() => {
-    if (selectedTab === 'hiking' && postId) {
-      // Example: fetch image from /posts/{postId} (simulate with static image for now)
+    if (selectedTab === 'hiking' && slug) {
+      // Example: fetch image from /posts/{slug} (simulate with static image for now)
       // Replace this with a real fetch if you have an API
       setHikeImage('https://llandudnoshack.co.za/images/Gallery-shack.jpg')
     }
-  }, [selectedTab, postId])
+  }, [selectedTab, slug])
 
   // Update placeholder and suggest input when package changes
   useEffect(() => {
@@ -98,6 +102,13 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!currentUser?.id || !slug) return
+    fetch(`/api/estimates/latest?slug=${slug}${currentUser?.id ? `&userId=${currentUser.id}` : ''}`)
+      .then(res => res.json())
+      .then(setLatestEstimate)
+  }, [currentUser?.id, slug])
+
   const packages = {
     standard: {
       title: "Standard Package",
@@ -136,6 +147,28 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
   }
   const total = calculateTotal(pkg.rate, duration, 1)
 
+  type EstimateWithPackage = Estimate & { packageType?: string | null }
+  const pkgType = (latestEstimate as EstimateWithPackage)?.packageType
+  const assistantContext = pkgType
+    ? {
+        message: `Welcome back! Last time you considered the ${capitalize(pkgType)} package for ${slug} from ${formatDate(latestEstimate?.fromDate)} to ${formatDate(latestEstimate?.toDate)}. Would you like to book the same again, or try a different package?` + (pkgType === 'wine' ? " 🍷" : pkgType === 'hiking' ? " 🥾" : pkgType === 'film' ? " 🎬" : " 🏡"),
+        prefill: latestEstimate
+      }
+    : {
+        message: `Welcome! Here are the available packages for ${slug}: ${Object.values(packages).map(p => p.title).join(', ')}. Which would you like to book?` + "\nLet me know if you want a recommendation!",
+        prefill: null
+      }
+
+  // Optionally, prefill the form fields if assistantContext.prefill exists
+  useEffect(() => {
+    if (assistantContext.prefill) {
+      setStartDate(new Date(assistantContext.prefill.fromDate))
+      setEndDate(new Date(assistantContext.prefill.toDate))
+      setSelectedTab((assistantContext.prefill as EstimateWithPackage).packageType || 'standard')
+      // Optionally prefill guests, etc.
+    }
+  }, [assistantContext.prefill])
+
   async function runGeminiDateParse() {
     if (!ai || !geminiInput) return;
     setGeminiLoading(true);
@@ -153,7 +186,33 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
       } else {
         context = "The user wants a standard accommodation stay.";
       }
-      const prompt = `Today is ${todayStr}. ${context} Extract the check-in and check-out dates from this booking request: "${geminiInput}". Return as JSON: {\"fromDate\": \"YYYY-MM-DD\", \"toDate\": \"YYYY-MM-DD\"}. Dates must be in the future, relative to today. If a specific time is relevant (like 9am or 1pm for film studio), include it in the JSON as {\"fromDate\":\"YYYY-MM-DDTHH:MM\",\"toDate\":\"YYYY-MM-DDTHH:MM\"}.`;
+
+      const contextParts: string[] = [];
+      if (pkgType) {
+        const lastPackageTitle = packages[pkgType]?.title || capitalize(pkgType);
+        contextParts.push(
+          `The user's last package for ${slug} was "${lastPackageTitle}".`
+        );
+        if (latestEstimate?.fromDate && latestEstimate?.toDate) {
+          contextParts.push(
+            `Their last check-in date was ${formatDate(latestEstimate.fromDate)} and check-out date was ${formatDate(latestEstimate.toDate)}.`
+          );
+        }
+      }
+      contextParts.push(
+        `Available packages for ${slug}: ${Object.values(packages).map(p => p.title).join(', ')}.`
+      );
+      const assistantContextString = contextParts.join(' ');
+
+      const prompt = `
+${assistantContextString}
+Today is ${todayStr}. ${context}
+Extract the check-in and check-out dates from this booking request: "${geminiInput}".
+Return as JSON: {"fromDate": "YYYY-MM-DD", "toDate": "YYYY-MM-DD"}.
+Dates must be in the future, relative to today.
+If a specific time is relevant (like 9am or 1pm for film studio), include it in the JSON as {"fromDate":"YYYY-MM-DDTHH:MM","toDate":"YYYY-MM-DDTHH:MM"}.
+If the user asks about their last package, respond with the last package info and suggest available packages.
+`
       const response = await ai.models.generateContent({
         model: "gemini-2.0-flash",
         contents: prompt,
@@ -177,9 +236,18 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
 
   return (
     <div className="block bg-card shadow p-6 flex flex-col items-left">
-    
+            <div className="flex justify-end mb-6">
+          {latestEstimate ? (
+            <Link href={`/estimate/${latestEstimate.id}`}>
+              {/* TODO: submit the dates selected by the user to update the previous estimate */}
+              <Button variant="default">Request availability</Button>
+            </Link>
+          ) : (
+            <Button variant="default" disabled>No estimate available</Button>
+          )}
+        </div>
 
-      {/* Stay Length Form */}
+      {/* Issue Booking Form */}
       <div className="flex flex-col space-y-2 w-full max-w-md mb-6">
         
         <label className="text-gray-700 font-medium">When where you thinking</label>
@@ -289,7 +357,7 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
         </div>
         {/* Image floated right on desktop, below on mobile */}
         <a
-          href={`/posts/${postId}`}
+          href={`/posts/${slug}`}
           rel="noopener noreferrer"
           className="group block flex-shrink-0"
           tabIndex={-1}
@@ -308,11 +376,11 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
         <span className="text-muted-foreground">Posts</span>
         <span className="text-muted-foreground">&gt;</span>
         <a
-          href={`/posts/${postId}`}
+          href={`/posts/${slug}`}
           className="text-primary underline font-medium"
           rel="noopener noreferrer"
         >
-          {postId}
+          {slug}
         </a>
       </nav>
 
@@ -336,20 +404,33 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage }) => {
         
       </TabsList>
     </Tabs>
+    {/* TODO: Disable button if no dates are selected */}
     <Button
       variant="default"
       className="px-4 py-2 whitespace-nowrap"
-      disabled={loading}
+      disabled={loading || !slug}
       onClick={async () => {
+        if (!slug) {
+          alert('Slug is missing. Cannot create estimate.');
+          return;
+        }
         setLoading(true)
-        const postId = window.location.pathname.split('/').pop()
+        console.log({
+          slug,
+          fromDate: startDate ? startDate.toISOString() : undefined,
+          toDate: endDate ? endDate.toISOString() : undefined,
+          guests: [],
+          customer: currentUser?.id,
+          packageType: selectedTab,
+          total: total,
+        })
         const res = await fetch('/api/estimates', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            postId,
-            fromDate: startDate,
-            toDate: endDate,
+            slug,
+            fromDate: startDate ? startDate.toISOString() : undefined,
+            toDate: endDate ? endDate.toISOString() : undefined,
             guests: [],
             customer: currentUser?.id,
             packageType: selectedTab,
@@ -414,8 +495,10 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url, baseRate }) =
     }
   }, [currentUser, isUserLoading, isSubscribed, isSubscriptionLoading, router, isPublicPage, url])
 
+  const slug = typeof window !== 'undefined' ? window.location.pathname.split('/').filter(Boolean).pop() : ''
+
   if (!page) {
-    return <PayloadRedirects url={url} disableNotFound={false} />
+    return <div className="container py-12"><p>Page not found.</p></div>
   }
 
   if (!isPublicPage) {
@@ -458,7 +541,13 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url, baseRate }) =
         <div className="container mt-8 flex flex-col items-center space-y-4">
           <div className="w-full max-w-2xl mt-8">
             {isCustomer && isSubscribed && entitlements.includes('pro') ? (
-              <PackageBlock currentUser={currentUser} router={router} baseRate={baseRate} heroImage={heroImage} />
+              <PackageBlock
+                currentUser={currentUser}
+                router={router}
+                baseRate={baseRate}
+                heroImage={heroImage}
+                slug={slug}
+              />
             ) : isSubscriptionLoading ? (
               <div className="text-center text-muted-foreground py-12">Checking subscription...</div>
             ) : (
@@ -479,6 +568,14 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url, baseRate }) =
       <p>Checking access...</p>
     </div>
   )
+}
+
+function formatDate(dateStr) {
+  return new Date(dateStr).toLocaleDateString()
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
 export default PageClient

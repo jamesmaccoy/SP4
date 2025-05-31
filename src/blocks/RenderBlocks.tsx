@@ -8,7 +8,7 @@ import { CallToActionBlock } from '@/blocks/CallToAction/Component'
 import { ContentBlock } from '@/blocks/Content/Component'
 import { FormBlock } from '@/blocks/Form/Component'
 import { MediaBlock } from '@/blocks/MediaBlock/Component'
-import { StayDuration } from '@/blocks/StayDuration/Component'
+import { EstimateBlock } from '@/blocks/EstimateBlock/Component'
 import { GalleryBlock } from '@/blocks/Gallery/component'
 import { RawHTMLBlock } from '@/blocks/RawHTMLBlock/component'
 
@@ -18,7 +18,7 @@ const blockComponents = {
   cta: CallToActionBlock,
   formBlock: FormBlock,
   mediaBlock: MediaBlock,
-  stayDuration: StayDuration,
+  stayDuration: EstimateBlock,
   gallery: GalleryBlock,
   rawHTML: RawHTMLBlock,
 }

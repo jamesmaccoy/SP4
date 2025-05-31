@@ -14,7 +14,7 @@ import { PostHero } from '@/heros/PostHero'
 import { generateMeta } from '@/utilities/generateMeta'
 import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
-import { StayDuration } from '@/blocks/StayDuration/Component'
+import { EstimateBlock } from '@/blocks/EstimateBlock/Component'
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -51,13 +51,6 @@ export default async function Post({ params: paramsPromise }: Args) {
 
   return (
     <article className="pt-16 pb-16">
-      <PageClient
-        page={post}
-        draft={draft}
-        url={url}
-        baseRate={typeof post.baseRate === 'number' ? post.baseRate : undefined}
-      />
-
       {/* Allows redirects for valid pages too */}
       <PayloadRedirects disableNotFound url={url} />
 
@@ -70,7 +63,7 @@ export default async function Post({ params: paramsPromise }: Args) {
         
           <RichText className="max-w-[48rem] mx-auto" data={post.content} enableGutter={false} />
           <div id="book-now" />
-          <StayDuration postId={slug} blockType="stayDuration" baseRate={typeof post.baseRate === 'number' ? post.baseRate : 0} />
+          <EstimateBlock postId={slug} blockType="stayDuration" baseRate={typeof post.baseRate === 'number' ? post.baseRate : 0} />
 
           {post.relatedPosts && post.relatedPosts.length > 0 && (
             <RelatedPosts
