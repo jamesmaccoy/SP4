@@ -35,7 +35,7 @@ export interface PageClientProps {
 // Gemini AI Example (client-side only)
 const ai = typeof window !== 'undefined' ? new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyAEQx7gPPm28A8kmsuFCaUCDcoYM08SL-E" }) : null;
 
-const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage, slug }) => {
+const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage, slug, propertyTitle }) => {
   const [selectedTab, setSelectedTab] = useState('standard')
   const [startDate, setStartDate] = useState<Date | null>(new Date())
   const [endDate, setEndDate] = useState<Date | null>(new Date(new Date().setDate(new Date().getDate() + 5)))
@@ -49,65 +49,10 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage, slug }) 
   const [geminiInput, setGeminiInput] = useState("");
   const [geminiResult, setGeminiResult] = useState("");
   const [geminiLoading, setGeminiLoading] = useState(false);
-  const [geminiPlaceholder, setGeminiPlaceholder] = useState("e.g. next Friday to Sunday");
+  const [geminiPlaceholder, setGeminiPlaceholder] = useState("");
 
   const [latestEstimate, setLatestEstimate] = useState<Estimate | null>(null);
-
-  useEffect(() => {
-    if (selectedTab === 'hiking' && slug) {
-      // Example: fetch image from /posts/{slug} (simulate with static image for now)
-      // Replace this with a real fetch if you have an API
-      setHikeImage('https://llandudnoshack.co.za/images/Gallery-shack.jpg')
-    }
-  }, [selectedTab, slug])
-
-  // Update placeholder and suggest input when package changes
-  useEffect(() => {
-    let placeholder = "e.g. next Friday to Sunday";
-    let suggestion = "";
-    if (selectedTab === "wine") {
-      placeholder = "e.g. wine weekend next month";
-      suggestion = "next month wine weekend";
-    } else if (selectedTab === "hiking") {
-      placeholder = "e.g. hiking trip this Saturday to Sunday";
-      suggestion = "this Saturday to Sunday hiking";
-    } else if (selectedTab === "film") {
-      placeholder = "e.g. book film studio for 9am next Wednesday";
-      suggestion = "next Wednesday 9am film studio";
-    } else if (selectedTab === "standard") {
-      placeholder = "e.g. next Friday to Sunday";
-      suggestion = "next Friday to Sunday";
-    }
-    setGeminiPlaceholder(placeholder);
-    setGeminiInput(""); // Optionally: setGeminiInput(suggestion);
-  }, [selectedTab]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
-      // @ts-ignore
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.lang = "en-US";
-      recognitionRef.current.interimResults = false;
-      recognitionRef.current.maxAlternatives = 1;
-
-      recognitionRef.current.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setGeminiInput(transcript);
-        setListening(false);
-      };
-
-      recognitionRef.current.onend = () => setListening(false);
-      recognitionRef.current.onerror = () => setListening(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!currentUser?.id || !slug) return
-    fetch(`/api/estimates/latest?slug=${slug}${currentUser?.id ? `&userId=${currentUser.id}` : ''}`)
-      .then(res => res.json())
-      .then(setLatestEstimate)
-  }, [currentUser?.id, slug])
+  const [acceptedSuggestion, setAcceptedSuggestion] = useState(false);
 
   const packages = {
     standard: {
@@ -136,6 +81,81 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage, slug }) 
       rate: baseRate * 2
     }
   }
+  type EstimateWithPackage = Estimate & { packageType?: string | null }
+  let pkgType = (latestEstimate as EstimateWithPackage)?.packageType;
+  if (!pkgType && latestEstimate?.title) {
+    const lower = latestEstimate.title.toLowerCase();
+    if (lower.includes('wine')) pkgType = 'wine';
+    else if (lower.includes('hiking')) pkgType = 'hiking';
+    else if (lower.includes('film')) pkgType = 'film';
+    else if (lower.includes('standard')) pkgType = 'standard';
+    else pkgType = 'standard';
+  }
+
+  useEffect(() => {
+    if (latestEstimate) {
+      let pkgType = (latestEstimate as EstimateWithPackage)?.packageType;
+      if (!pkgType && latestEstimate?.title) {
+        const lower = latestEstimate.title.toLowerCase();
+        if (lower.includes('wine')) pkgType = 'wine';
+        else if (lower.includes('hiking')) pkgType = 'hiking';
+        else if (lower.includes('film')) pkgType = 'film';
+        else if (lower.includes('standard')) pkgType = 'standard';
+        else pkgType = 'standard';
+      }
+      setSelectedTab(pkgType || 'standard');
+    }
+  }, [latestEstimate]);
+
+  useEffect(() => {
+    if (selectedTab === 'hiking' && slug) {
+      // Example: fetch image from /posts/{slug} (simulate with static image for now)
+      // Replace this with a real fetch if you have an API
+      setHikeImage('https://llandudnoshack.co.za/images/Gallery-shack.jpg')
+    }
+  }, [selectedTab, slug])
+
+  // Build a context-rich placeholder
+  useEffect(() => {
+    let placeholder = "";
+    if (pkgType && latestEstimate?.fromDate && latestEstimate?.toDate) {
+      const lastPackageTitle = packages[pkgType]?.title || capitalize(pkgType);
+      placeholder = `Welcome back! Last time you considered the ${lastPackageTitle} package for ${slug} from ${formatDate(latestEstimate.fromDate)} to ${formatDate(latestEstimate.toDate)}.\nAvailable packages: ${Object.values(packages).map(p => p.title).join(', ')}.\nLet me know if you want to book the same again, try a different package, or get a recommendation!`;
+    } else {
+      // No previous package info
+      placeholder = `I don't have information about your last package yet. Let me know which package you'd like to book and when!\nAvailable packages: ${Object.values(packages).map(p => p.title).join(', ')}.`;
+    }
+    setGeminiPlaceholder(placeholder);
+    setGeminiInput("");
+  }, [selectedTab, pkgType, latestEstimate, slug]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
+      // @ts-ignore
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.lang = "en-US";
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.maxAlternatives = 1;
+
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setGeminiInput(transcript);
+        setListening(false);
+      };
+
+      recognitionRef.current.onend = () => setListening(false);
+      recognitionRef.current.onerror = () => setListening(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser?.id) return
+    fetch(`/api/estimates/latest?userId=${currentUser.id}`)
+      .then(res => res.json())
+      .then(setLatestEstimate)
+  }, [currentUser?.id])
+
   const pkg = packages[selectedTab] || packages["standard"]
 
   // Calculate duration
@@ -147,15 +167,22 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage, slug }) 
   }
   const total = calculateTotal(pkg.rate, duration, 1)
 
-  type EstimateWithPackage = Estimate & { packageType?: string | null }
-  const pkgType = (latestEstimate as EstimateWithPackage)?.packageType
-  const assistantContext = pkgType
+  // Use the previous estimate's property for context if available
+  let lastPropertyContext = slug;
+  if (latestEstimate && typeof latestEstimate.post === 'object') {
+    lastPropertyContext = latestEstimate.post.title || latestEstimate.post.slug || slug;
+  } else if (latestEstimate && typeof latestEstimate.post === 'string') {
+    lastPropertyContext = latestEstimate.post;
+  }
+  const propertyContext = latestEstimate ? lastPropertyContext : (propertyTitle || slug || 'this property');
+
+  const assistantContext = latestEstimate
     ? {
-        message: `Welcome back! Last time you considered the ${capitalize(pkgType)} package for ${slug} from ${formatDate(latestEstimate?.fromDate)} to ${formatDate(latestEstimate?.toDate)}. Would you like to book the same again, or try a different package?` + (pkgType === 'wine' ? " 🍷" : pkgType === 'hiking' ? " 🥾" : pkgType === 'film' ? " 🎬" : " 🏡"),
+        message: `Welcome back! Last time you considered the ${capitalize(pkgType)} package for ${propertyContext} from ${formatDate(latestEstimate?.fromDate)} to ${formatDate(latestEstimate?.toDate)}. Would you like to book the same again, or try a different package?` + (pkgType === 'wine' ? " 🍷" : pkgType === 'hiking' ? " 🥾" : pkgType === 'film' ? " 🎬" : " 🏡"),
         prefill: latestEstimate
       }
     : {
-        message: `Welcome! Here are the available packages for ${slug}: ${Object.values(packages).map(p => p.title).join(', ')}. Which would you like to book?` + "\nLet me know if you want a recommendation!",
+        message: `Welcome! Here are the available packages for ${propertyContext}: ${Object.values(packages).map(p => p.title).join(', ')}. Which would you like to book?` + "\nLet me know if you want a recommendation!",
         prefill: null
       }
 
@@ -171,25 +198,25 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage, slug }) 
 
   // Build the context string for display and Gemini
   const contextParts: string[] = [];
-  if (pkgType) {
+  if (latestEstimate && pkgType) {
     const lastPackageTitle = packages[pkgType]?.title || capitalize(pkgType);
     contextParts.push(
-      `The user's last package for ${slug} was "${lastPackageTitle}".`
+      `The user's last package was "${lastPackageTitle}" for "${propertyContext}".`
     );
-    if (latestEstimate?.fromDate && latestEstimate?.toDate) {
+    if (latestEstimate.fromDate && latestEstimate.toDate) {
       contextParts.push(
         `Their last check-in date was ${formatDate(latestEstimate.fromDate)} and check-out date was ${formatDate(latestEstimate.toDate)}.`
       );
     }
   }
   contextParts.push(
-    `Available packages for ${slug}: ${Object.values(packages).map(p => p.title).join(', ')}.`
+    `Available packages: ${Object.values(packages).map(p => p.title).join(', ')}.`
   );
   const assistantContextString = contextParts.join(' ');
 
   // Personalized Gemini input placeholder
   const personalizedPlaceholder = pkgType && latestEstimate?.fromDate && latestEstimate?.toDate
-    ? `Welcome back! Last time you considered the ${packages[pkgType]?.title || capitalize(pkgType)} package for ${slug} from ${formatDate(latestEstimate.fromDate)} to ${formatDate(latestEstimate.toDate)}. Would you like to book the same again, or try a different package?`
+    ? `Welcome back! Last time you considered the ${packages[pkgType]?.title || capitalize(pkgType)} package for ${propertyContext} from ${formatDate(latestEstimate.fromDate)} to ${formatDate(latestEstimate.toDate)}. Would you like to book the same again, or try a different package?`
     : geminiPlaceholder;
 
   async function runGeminiDateParse() {
@@ -211,19 +238,19 @@ const PackageBlock = ({ currentUser, router, baseRate = 150, heroImage, slug }) 
       }
 
       const contextParts: string[] = [];
-      if (pkgType) {
+      if (latestEstimate && pkgType) {
         const lastPackageTitle = packages[pkgType]?.title || capitalize(pkgType);
         contextParts.push(
-          `The user's last package for ${slug} was "${lastPackageTitle}".`
+          `The user's last package was "${lastPackageTitle}" for "${propertyContext}".`
         );
-        if (latestEstimate?.fromDate && latestEstimate?.toDate) {
+        if (latestEstimate.fromDate && latestEstimate.toDate) {
           contextParts.push(
             `Their last check-in date was ${formatDate(latestEstimate.fromDate)} and check-out date was ${formatDate(latestEstimate.toDate)}.`
           );
         }
       }
       contextParts.push(
-        `Available packages for ${slug}: ${Object.values(packages).map(p => p.title).join(', ')}.`
+        `Available packages: ${Object.values(packages).map(p => p.title).join(', ')}.`
       );
       const assistantContextString = contextParts.join(' ');
 
@@ -258,24 +285,15 @@ If the user asks about their last package, respond with the last package info an
   }
 
   return (
-    <div className="block bg-card shadow p-6 flex flex-col items-left">
+    <div className="blockbg-card shadow p-6 flex flex-col items-left ">
       {/* Show context info at the top */}
-      <div className="mb-4 p-3 bg-muted rounded text-sm text-muted-foreground">
+      <div className="mb-4 p-3 bg-muted rounded text-sm text-muted-foreground w-full h-full">
         {assistantContextString}
       </div>
-      <div className="flex justify-end mb-6">
-        {latestEstimate ? (
-          <Link href={`/estimate/${latestEstimate.id}`}>
-            {/* TODO: submit the dates selected by the user to update the previous estimate */}
-            <Button variant="default">Request availability</Button>
-          </Link>
-        ) : (
-          <Button variant="default" disabled>No estimate available</Button>
-        )}
-      </div>
+     
 
       {/* Issue Booking Form */}
-      <div className="flex flex-col space-y-2 w-full max-w-md mb-6">
+      <div className="flex flex-col space-y-2 w-full mb-6 p-6 rounded-lg shadow-lg">
         
         <label className="text-gray-700 font-medium">When where you thinking</label>
         {/* Gemini natural language input and button in a form */}
@@ -288,13 +306,13 @@ If the user asks about their last package, respond with the last package info an
         >
           
          
-          <div className="flex w-full max-w-sm items-center space-x-2">
+          <div className="flex w-full items-center space-x-2">
           <Input
             type="text"
             placeholder={personalizedPlaceholder}
             value={geminiInput}
             onChange={e => setGeminiInput(e.target.value || "")}
-            className="mx-50"
+            className="w-full border-2 rounded-2xl h-16 text-xl font-bold px-6 py-4 shadow-lg focus:ring-4 focus:ring-green-200"
           />
           <Button
             type="button"
@@ -381,6 +399,76 @@ If the user asks about their last package, respond with the last package info an
               <span className="font-bold">Total:</span> R{total.toFixed(2)}
             </li>
           </ul>
+          <Button
+            variant="default"
+            className="mt-2"
+            disabled={loading}
+            onClick={async () => {
+              let useEstimate = false;
+              let useStartDate = startDate;
+              let useEndDate = endDate;
+              let usePackage = selectedTab;
+              let usePostId = slug;
+              // If there is a previous estimate, use its values and property
+              if (latestEstimate) {
+                useEstimate = true;
+                useStartDate = new Date(latestEstimate.fromDate);
+                useEndDate = new Date(latestEstimate.toDate);
+                let pkgType = (latestEstimate as EstimateWithPackage)?.packageType;
+                if (!pkgType && latestEstimate?.title) {
+                  const lower = latestEstimate.title.toLowerCase();
+                  if (lower.includes('wine')) pkgType = 'wine';
+                  else if (lower.includes('hiking')) pkgType = 'hiking';
+                  else if (lower.includes('film')) pkgType = 'film';
+                  else if (lower.includes('standard')) pkgType = 'standard';
+                  else pkgType = 'standard';
+                }
+                usePackage = pkgType || 'standard';
+                // Use the postId/slug/title from the previous estimate
+                if (typeof latestEstimate.post === 'object') {
+                  usePostId = latestEstimate.post.id || latestEstimate.post.slug || latestEstimate.post.title || slug;
+                } else if (typeof latestEstimate.post === 'string') {
+                  usePostId = latestEstimate.post;
+                }
+              }
+              if (!usePostId) {
+                alert('Property is missing. Cannot create estimate.');
+                return;
+              }
+              if (!useStartDate) {
+                alert('Please select a check-in date.');
+                return;
+              }
+              if (!useEndDate) {
+                alert('Please select a check-out date.');
+                return;
+              }
+              setLoading(true)
+              const duration = Math.max(1, Math.ceil((useEndDate.getTime() - useStartDate.getTime()) / (1000 * 60 * 60 * 24)));
+              const res = await fetch('/api/estimates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  postId: usePostId,
+                  fromDate: useStartDate.toISOString(),
+                  toDate: useEndDate.toISOString(),
+                  guests: [],
+                  customer: currentUser?.id,
+                  packageType: usePackage,
+                  total: calculateTotal(packages[usePackage].rate, duration, 1),
+                }),
+              })
+              setLoading(false)
+              if (res.ok) {
+                const estimate = await res.json()
+                router.push(`/estimate/${estimate.id}`)
+              } else {
+                alert('Failed to create estimate')
+              }
+            }}
+          >
+            {latestEstimate ? 'Book Again with Suggested Dates & Package' : 'Request Availability'}
+          </Button>
         </div>
         {/* Image floated right on desktop, below on mobile */}
         <a
@@ -435,15 +523,15 @@ If the user asks about their last package, respond with the last package info an
     <Button
       variant="default"
       className="px-4 py-2 whitespace-nowrap"
-      disabled={loading || !slug}
+      disabled={loading || !propertyTitle || (!acceptedSuggestion && (!startDate || !endDate))}
       onClick={async () => {
-        if (!slug) {
-          alert('Slug is missing. Cannot create estimate.');
+        if (!propertyTitle) {
+          alert('Property title is missing. Cannot create estimate.');
           return;
         }
         setLoading(true)
         console.log({
-          slug,
+          postId: propertyTitle,
           fromDate: startDate ? startDate.toISOString() : undefined,
           toDate: endDate ? endDate.toISOString() : undefined,
           guests: [],
@@ -455,7 +543,7 @@ If the user asks about their last package, respond with the last package info an
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            slug,
+            postId: propertyTitle,
             fromDate: startDate ? startDate.toISOString() : undefined,
             toDate: endDate ? endDate.toISOString() : undefined,
             guests: [],
@@ -560,13 +648,18 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url, baseRate }) =
           ? `/media/${hero.media}` // fallback if only ID is present
           : null;
 
+    const propertyTitle =
+      page?.title ||
+      (typeof (page as any)?.post === 'object' && (page as any).post?.title) ||
+      slug;
+
     return (
       <article className="pt-16 pb-24">
         {draft && <LivePreviewListener />}
 
         { /* Pro entitlement for revenuecat */}
-        <div className="container mt-8 flex flex-col items-center space-y-4">
-          <div className="w-full max-w-2xl mt-8">
+        <div className="container flex flex-col items-center space-y-4 w-full">
+          <div className="w-full">
             {isCustomer && isSubscribed && entitlements.includes('pro') ? (
               <PackageBlock
                 currentUser={currentUser}
@@ -574,6 +667,7 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url, baseRate }) =
                 baseRate={baseRate}
                 heroImage={heroImage}
                 slug={slug}
+                propertyTitle={propertyTitle}
               />
             ) : isSubscriptionLoading ? (
               <div className="text-center text-muted-foreground py-12">Checking subscription...</div>

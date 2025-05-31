@@ -13,31 +13,49 @@ const PACKAGE_RATES = {
 export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get('userId')
   const slug = req.nextUrl.searchParams.get('slug')
-  if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 })
-
   const payload = await getPayload({ config: configPromise })
-  if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 })
 
-    const where: any = [
-      { 'post.slug': { equals: slug } }
-    ]
-    if (userId) {
-      where.push({ customer: { equals: userId } })
-    }
-    
-    const estimates = await payload.find({
+  let where: any[] = []
+
+  if (slug) {
+    // First, resolve the post by slug to get its ID
+    const postResult = await payload.find({
+      collection: 'posts',
+      where: { slug: { equals: slug } },
+      limit: 1,
+    })
+    const post = postResult.docs[0]
+    if (!post) return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+    const postId = post.id
+    where.push({ post: { equals: postId } })
+  }
+
+  if (userId) {
+    where.push({ customer: { equals: userId } })
+  }
+
+  let estimates;
+  if (where.length > 0) {
+    estimates = await payload.find({
       collection: 'estimates',
       where: { and: where },
       sort: '-createdAt',
       limit: 1,
       depth: 2,
     })
-    const estimate = estimates.docs[0] || null
+  } else {
+    estimates = await payload.find({
+      collection: 'estimates',
+      sort: '-createdAt',
+      limit: 1,
+      depth: 2,
+    })
+  }
+  const estimate = estimates.docs[0] || null
 
   // Infer packageType if not present
   if (estimate) {
     let packageType: string | null = null
-    // If you have a title convention, try to extract it
     if (estimate.title) {
       const lower = estimate.title.toLowerCase()
       if (lower.includes('wine')) packageType = 'wine'
@@ -45,7 +63,6 @@ export async function GET(req: NextRequest) {
       else if (lower.includes('film')) packageType = 'film'
       else if (lower.includes('standard')) packageType = 'standard'
     }
-    // Or infer from total and duration if you know the base rate
     if (!packageType && estimate.fromDate && estimate.toDate && estimate.total && estimate.post && typeof estimate.post === 'object') {
       const baseRate = estimate.post.baseRate || 150
       const duration = Math.ceil((new Date(estimate.toDate).getTime() - new Date(estimate.fromDate).getTime()) / (1000 * 60 * 60 * 24))
