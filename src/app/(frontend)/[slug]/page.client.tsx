@@ -311,7 +311,7 @@ If the user asks about their last package, respond with the last package info an
             placeholder={personalizedPlaceholder}
             value={geminiInput}
             onChange={e => setGeminiInput(e.target.value || "")}
-            className="w-full border-2 rounded-2xl text-xl px-6 py-4 shadow-lg focus:ring-4 focus:ring-green-200 resize-none min-h-[4rem] max-h-[16rem] overflow-auto text-foreground dark:text-foreground"
+            className="w-full border-2 rounded-2xl text-xl px-6 py-4 shadow-lg focus:ring-4 focus:ring-green-200 resize-none min-h-[6rem] sm:min-h-[8rem] max-h-[16rem] overflow-auto text-foreground dark:text-foreground bg-transparent"
           />
           <Button
             type="button"
