@@ -325,7 +325,14 @@ If the user asks about their last package, respond with the last package info an
             placeholder={personalizedPlaceholder}
             value={geminiInput}
             onChange={e => setGeminiInput(e.target.value || "")}
-            className="w-full h-screen border-2 rounded-2xl text-xl px-6 py-4 shadow-lg focus:ring-4 focus:ring-green-200 resize-none overscroll-contain text-foreground dark:text-foreground bg-transparent"
+            onKeyDown={e => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (!geminiLoading && geminiInput) runGeminiDateParse();
+              }
+            }}
+            enterKeyHint="send"
+            className="w-full border-2 rounded-2xl text-xl px-6 py-4 shadow-lg focus:ring-4 focus:ring-green-200 resize-none overscroll-contain text-foreground dark:text-foreground bg-transparent"
           />
          
     </div>
