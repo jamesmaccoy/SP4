@@ -293,7 +293,7 @@ If the user asks about their last package, respond with the last package info an
      
 
       {/* Issue Booking Form */}
-      <div className="flex flex-col space-y-2 w-full mb-6 p-6 rounded-lg shadow-lg">
+      <div className="flex flex-col space-y-2 w-full  rounded-lg shadow-lg">
         
         <label className="text-gray-700 font-medium center-content">When where you thinking</label>
         {/* Gemini natural language input and button in a form */}
@@ -306,13 +306,7 @@ If the user asks about their last package, respond with the last package info an
         >
           
          
-          <div className="flex w-full items-center space-x-2">
-          <textarea
-            placeholder={personalizedPlaceholder}
-            value={geminiInput}
-            onChange={e => setGeminiInput(e.target.value || "")}
-            className="w-full border-2 rounded-2xl text-xl px-6 py-4 shadow-lg focus:ring-4 focus:ring-green-200 resize-none min-h-[6rem] sm:min-h-[8rem] max-h-[16rem] overflow-auto text-foreground dark:text-foreground bg-transparent"
-          />
+          <div className=" w-full items-center space-x-2">
           <Button
             type="button"
             variant="ghost"
@@ -327,6 +321,13 @@ If the user asks about their last package, respond with the last package info an
           >
             {listening ? "Listening..." : <span role="img" aria-label="microphone">🎤</span>}
           </Button>
+          <textarea
+            placeholder={personalizedPlaceholder}
+            value={geminiInput}
+            onChange={e => setGeminiInput(e.target.value || "")}
+            className="w-full h-screen border-2 rounded-2xl text-xl px-6 py-4 shadow-lg focus:ring-4 focus:ring-green-200 resize-none overscroll-contain text-foreground dark:text-foreground bg-transparent"
+          />
+         
     </div>
         </form>
         
