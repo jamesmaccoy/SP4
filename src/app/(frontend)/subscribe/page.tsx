@@ -123,10 +123,10 @@ export default function SubscribePage() {
         </div>
       )}
       <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">Stay at one of our self built cabins.</h1>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">A digital design partner for
+        startups and brave businesses</h1>
         <p className="mt-4 text-lg leading-8 text-muted-foreground">
-          Split your payments into smaller amounts
-        </p>
+        I create integrated brand, product and service experiences.
       </div>
 
       <div className="mx-auto max-w-4xl grid grid-cols-1 gap-8 md:grid-cols-2 items-start">
@@ -142,14 +142,14 @@ export default function SubscribePage() {
               </p>
               <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                 <li className="flex gap-x-3">Calendar booking request</li>
-                <li className="flex gap-x-3">Curated unique cottages</li>
+                <li className="flex gap-x-3">Curated unique solutions</li>
                 <li className="flex gap-x-3">Invite guests</li>
               </ul>
               <button
                 onClick={() => handlePurchase(monthly_subscription_plan)}
                 className="mt-8 block w-full rounded-md bg-secondary px-3.5 py-2.5 text-center text-sm font-semibold text-secondary-foreground shadow-sm hover:bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
-                Pay it off monthly
+                Pay way later
               </button>
             </div>
           )
@@ -170,9 +170,9 @@ export default function SubscribePage() {
               </p>
               <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                 <li className="flex gap-x-3">Calendar booking request</li>
-                <li className="flex gap-x-3">Curated unique cottages</li>
+                <li className="flex gap-x-3">Curated unique solutions</li>
                 <li className="flex gap-x-3">Invite guests</li>
-                <li className="flex gap-x-3">2 X Free nights</li>
+                <li className="flex gap-x-3">2 X Free Presentation calls</li>
               </ul>
               <button
                 onClick={() => handlePurchase(annual_subscription_plan)}

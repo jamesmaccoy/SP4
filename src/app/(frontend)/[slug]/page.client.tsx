@@ -679,7 +679,7 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url, baseRate }) =
             ) : isSubscriptionLoading ? (
               <div className="text-center text-muted-foreground py-12">Checking subscription...</div>
             ) : (
-              <div className="text-center text-muted-foreground py-12"><a href='/subscribe' className='text-primary underline'>Stay at our self built cabins.</a></div>
+              <div className="text-center text-muted-foreground py-12"><a href='/subscribe' className='text-primary underline'>I create integrated brand, product and service experiences.</a></div>
             )}
           </div>
         </div>
