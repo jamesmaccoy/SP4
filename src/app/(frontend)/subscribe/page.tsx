@@ -126,7 +126,7 @@ export default function SubscribePage() {
         <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">A digital design partner for
         startups and brave businesses</h1>
         <p className="mt-4 text-lg leading-8 text-muted-foreground">
-        I create integrated brand, product and service experiences.</p>
+        Familiar design patterns</p>
       </div>
 
       <div className="mx-auto max-w-4xl grid grid-cols-1 gap-8 md:grid-cols-2 items-start">
