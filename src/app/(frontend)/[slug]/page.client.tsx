@@ -586,7 +586,7 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url, baseRate }) =
   const { currentUser, isLoading: isUserLoading } = useUserContext()
   const { isSubscribed, entitlements, isLoading: isSubscriptionLoading } = useSubscription('pro')
 
-  const isPublicPage = url === '/' || url === '/terms-and-conditions'
+  const isPublicPage = url === '/' || url === '/terms-and-conditions' || url === '/explore'
 
   useEffect(() => {
     setHeaderTheme('light')
