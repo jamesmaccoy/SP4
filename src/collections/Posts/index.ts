@@ -26,13 +26,24 @@ import {
 } from '@payloadcms/plugin-seo/fields'
 import { slugField } from '@/fields/slug'
 import { isAdmin } from '@/access/isAdmin'
+import { anyone } from '@/access/anyone'
 
 export const Posts: CollectionConfig<'posts'> = {
   slug: 'posts',
   access: {
     create: isAdmin,
     delete: isAdmin,
-    read: isAdmin,
+    read: ({ req: { user } }) => {
+      if (!user) {
+        // Public: only published pages
+        return { _status: { equals: 'published' } };
+      }
+      if (user.role?.includes('admin')) return true;
+      if (user.role?.includes('customer')) {
+        return { author: { equals: user.id } };
+      }
+      return false;
+    },
     update: isAdmin,
   },
   // This config controls what's populated by default when a post is referenced

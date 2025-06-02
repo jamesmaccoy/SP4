@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, Access } from 'payload'
 
 import { Archive } from '../../blocks/ArchiveBlock/config'
 import { CallToAction } from '../../blocks/CallToAction/config'
@@ -24,6 +24,23 @@ import { isAdmin } from '@/access/isAdmin'
 import { adminOrSelfField } from '@/access/adminOrSelfField'
 import { User } from '@/payload-types'
 
+const pageReadAccess: Access = ({ req: { user } }) => {
+  if (!user) {
+    // Public: only published pages
+    return {
+      and: [{ _status: { equals: 'published' } }]
+    };
+  }
+  if (user.role?.includes('admin')) return true;
+  if (user.role?.includes('customer')) {
+    // Customers: only their own pages
+    return {
+      and: [{ author: { equals: user.id } }]
+    };
+  }
+  return false;
+};
+
 export const Pages: CollectionConfig<'pages'> = {
   slug: 'pages',
   access: {
@@ -34,16 +51,7 @@ export const Pages: CollectionConfig<'pages'> = {
       return roles.includes('admin') || roles.includes('customer');
     },
 
-    read: ({ req: { user } }) => {
-      if (!user) return false; // Not logged in
-      if (user.role?.includes('admin')) return true; // Admins see all
-      // Customers can read where the 'author' field equals their own ID
-      if (user.role?.includes('customer')) {
-          // Assumes your author field is named 'author'
-          return { author: { equals: user.id } };
-      }
-      return false; // Deny others
-    },
+    read: pageReadAccess,
 
     update: ({ req: { user } }) => {
       if (!user) return false;
